@@ -1,0 +1,13 @@
+FROM mysql:5.7
+
+COPY ./mysql.cnf /etc/mysql/conf.d/
+
+COPY ./teachagogo-db-schema.sql       /docker-entrypoint-initdb.d/a.sql
+COPY ./teachagogo-db-default-data.sql /docker-entrypoint-initdb.d/b.sql
+
+### XXX
+COPY ./teachagogo-db-api-testing-data.sql /docker-entrypoint-initdb.d/c.sql
+#######
+
+ENV MYSQL_DATABASE=teachagogo_dev
+ENV MYSQL_ROOT_PASSWORD=toor

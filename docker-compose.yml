@@ -1,0 +1,11 @@
+version: "3"
+
+services:
+  db:
+    ports:
+      - "3123:3306"
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.mysql
+    volumes:
+      - .:/shared:Z

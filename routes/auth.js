@@ -1,0 +1,182 @@
+
+const njwt = require('njwt');
+const jwtDecode = require('jwt-decode');
+const Router = require('@koa/router');
+const router = new Router();
+
+const models = require('../models');
+models.sequelize.options.logging = false;
+
+const { RequestError, ValidationError } = require('./error');
+
+const { validateBody } = require('../middleware/validators');
+
+const { guardAccessToken } = require('../middleware/guards');
+const { requireCaptcha } = require('../middleware/captcha');
+const throttler = require('../middleware/throttler');
+
+function queryToBody() {
+  return async (ctx, next) => {
+    ctx.request.body = ctx.request.query;
+    await next();
+  }
+}
+
+function injectUser() {
+  return async (ctx, next) => {
+    const user = await models.User.findOne({
+      where: { email: ctx.request.body.username }
+    });
+
+    if (!user) {
+      ctx.status = 403;
+      return;
+    }
+
+    ctx.user = user;
+    await next();
+  };
+}
+
+
+router
+.get(
+  '/username-validation',
+
+  throttler.ipThrottler(),
+
+  queryToBody(),
+
+  validateBody({
+    username: { presence: true },
+  }),
+
+  async (ctx) => {
+    const user = await models.User.findOne({
+      where: { email: ctx.request.body.username }
+    });
+
+    if (user) {
+      ctx.status = 200;
+      return;
+    }
+
+    ctx.status = 404;
+  },
+);
+
+router
+.post(
+  '/token-heartbeat',
+
+  guardAccessToken,
+
+  validateBody({
+    username: { presence: true },
+    password: { presence: true },
+  }),
+
+  async (ctx, next) => {
+    const tokenObject = jwtDecode(ctx.accessToken);
+
+    const user = await models.User.findByPk(tokenObject.sub);
+    if (!user.doesPasswordMatch(ctx.request.body.password)) {
+      ctx.status = 403;
+      ctx.body = {
+        message: `Invalid password`,
+      };
+      return;
+    }
+
+    await models.TokenHeartbeat.refresh(ctx.accessToken);
+
+    ctx.status = 200;
+    ctx.body = { refreshed: true };
+  }
+);
+
+router
+.post(
+  '/token/email-login-link',
+
+  validateBody({
+    username: { presence: true },
+  }),
+
+  injectUser(),
+
+  async (ctx, next) => {
+    try {
+      await ctx.user.sendLoginLink();
+      ctx.status = 200;
+    }
+    catch (e) {
+      ctx.status = 500;
+    }
+  }
+);
+
+router
+.post(
+  '/token/login-token',
+
+  validateBody({
+    loginToken: { presence: true },
+  }),
+
+  async (ctx, next) => {
+    const accessToken = await models.User.getAccessTokenFromLoginToken(ctx.request.body.loginToken);
+    if (!accessToken) {
+      ctx.status = 400;
+      return;
+    }
+
+    ctx.status = 200;
+    ctx.body = {
+      accessToken,
+    };
+  }
+);
+
+router
+.post(
+  '/token',
+
+  validateBody({
+    username: { presence: true },
+    password: { presence: true },
+  }),
+
+  injectUser(),
+
+  requireCaptcha(async (ctx) => {
+    const isIpRecognized = await ctx.user.isIpRecognized(ctx.ip);
+    return !isIpRecognized;
+  }),
+
+  throttler.userIdThrottler(),
+
+  async (ctx, next) => {
+    const user = ctx.user;
+
+    const doesMatch = user.doesPasswordMatch(ctx.request.body.password);
+    if (!doesMatch) {
+      ctx.status = 403;
+      ctx.body = { message: 'Incorrect credentials' };
+      return;
+    }
+
+    const accessToken = user.getNewAccessToken();
+
+    // ignore if empty address
+    if (ctx.ip !== '::1') {
+      await ctx.user.markIpRecognized(ctx.ip);
+    }
+
+    ctx.body = {
+      accessToken,
+    };
+  }
+);
+
+module.exports = router;

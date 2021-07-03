@@ -1,0 +1,39 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:ital,wght@0,400;0,600;0,900;1,400&display=swap');
+@import url('./glyphs/learningful-glyphs.css');
+
+:root {
+  /* defaults to black but will be programmatically changed */
+  --col-accent: #000000;
+
+  --col-title: #1d262d;
+  --col-input-placeholder: #c3cddd;
+  --col-border: #e9eff4;
+
+  --col-disabled: #f6f9fa;
+
+  --col-captcha-title: #ff2B4c;
+  --col-captcha-verify-border-disabled: #dadde0;
+  --col-captcha-verify-text: #258aff;
+  --col-captcha-verify-border: rgba(37, 138, 255, 0.5);
+
+  --col-captcha-red    : #f92d7b;
+  --col-captcha-yellow : #ffd71b;
+  --col-captcha-cyan   : #1ddfff;
+  --col-captcha-magenta: #ed5Fe0;
+
+  --col-help-center-left: #3E4D86;
+  --col-help-center-list-title: #B0C8FF;
+  --col-help-center-list-item: #3E4D86;
+  --col-help-center-list-item-new: #FF61F3;
+  --col-help-center-list-item-edit: #388DFF;
+  --col-help-center-topic-title: #1d262d;
+
+  --col-help-center-feedback-form-color: #F0F5FF;
+  --col-help-center-feedback-form-text: #BEC1DB;
+
+  --col-help-center-navigator-up: #388DFF;
+  --col-help-center-navigator-down: #00D377;
+
+  --col-upload-get-started-left : #f84242;
+}
