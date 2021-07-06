@@ -24,58 +24,16 @@
           <img :src="starterImage" width="100%"/>
       </div>
     </div>
-    <div v-else-if="step==0" class="upload-cotainer">
-      <div class="precheck-left-container">
-        <h3>New Resource: <b>Precheck</b></h3>
-        <div>Let's make sure your resource qualifies for publication on Learningful.</div>
-        <ul>
-            <li>
-                <input type="checkbox" id="qualify-1" @click="selectQualify(1)"/>
-                <label for="qualify-1">
-                    I created this resource myself, 
-                    or have a legal right/license to publish its content, 
-                    and it is something that will be helpful to teachers.
-                </label>
+    <div v-else-if="step>=0" class="upload-cotainer">
+      <Precheck v-if="step==0"/>
+      <div class="upload-right-container">
+          <ul>
+            <li v-for="(item, index) in stepList"
+             :key="item"
+             :class="{passed : (index+1)<step }">
+                {{item}}
             </li>
-            <li>
-                <input type="checkbox" id="qualify-2" @click="selectQualify(2)"/>
-                <label for="qualify-2">
-                    The cover image for this resource is visibly unique, attractive to the point
-                    it appears to be a professional publication, and contains the text of its title.
-                </label>
-            </li>
-            <li>
-                <input type="checkbox" id="qualify-3" @click="selectQualify(3)"/>
-                <label for="qualify-3">
-                    Although my resource may consist of virtually any type of file or media, it also
-                    includes at least one document of instructions that explain how to use it.
-                </label>
-            </li>
-            <li>
-                <input type="checkbox" id="qualify-4" @click="selectQualify(4)"/>
-                <label for="qualify-4">
-                    This resource is not currently published elsewhere on the internet, nor do I intend
-                    for it to be in the future, and is therefore wholly unique to Learningful.
-                </label>
-            </li>
-            <li>
-                <input type="checkbox" id="qualify-5" @click="selectQualify(5)"/>
-                <label for="qualify-5">
-                    My resource contains no advertising, links, or information intended to promote a 
-                    commercial product or service of which I am affiliated.
-                </label>
-            </li>
-        </ul>
-        <div>
-            <div>Uploading: Untitled Resource</div>
-            <div>
-                <button @click="next()">Next</button>
-            </div>
-        </div>
-      </div>
-
-      <div class="precheck-right-container">
-          
+          </ul>
       </div>
     </div>
   </modal>
@@ -88,17 +46,32 @@ import { required, minLength, numeric, minValue } from "vuelidate/lib/validators
 import starterImage from "../../assets/images/upload/start.png";
 
 import Modal from "../Modal";
+import Precheck from "./Precheck";
 
 export default {
   mixins: [validationMixin],
   components: {
-    Modal
+    Modal,
+    Precheck
   },
 
   data() {
     return {
         starterImage : starterImage,
-        step : -1
+        stepList : [
+          "Title",
+          "Resource Type",
+          "Subject Area",
+          "Description",
+          "Grade",
+          "Skills",
+          "Standards",
+          "Reading Level",
+          "Keywords",
+          "Files",
+          "Images",
+          "Status"
+        ]
     };
   },
 
@@ -116,7 +89,8 @@ export default {
   },
   computed: {
     ...mapGetters({
-      showModal: "upload/getUploadModalStatus"
+      showModal: "upload/getUploadModalStatus",
+      step : "upload/getUploadStep"
     }),
     feedbackTextCount() {
       return this.textCount - this.feedback.length
@@ -131,11 +105,7 @@ export default {
     },
     getStarted(){
         //.... logical part...
-        this.step+=1;
-    },
-    next(){
-        //.... logical part...
-        this.step+=1;
+      this.$store.commit("upload/GOTO_NEXT_UPLOAD_STEP");
     }
   },
 
@@ -150,6 +120,8 @@ export default {
 <style scoped>
 .upload-cotainer {
   display: flex;
+  width : 1014px;
+  height : 458px;
 }
 
 .get-started-left-container {
@@ -165,14 +137,23 @@ export default {
   width: 656px;
   height: 458px;
 }
-.precheck-left-container{
-    width : 756px;
-    height : 458px;
-}
-.precheck-right-container{
+
+.upload-right-container{
     width : 250px;
     height : 458px;
     background: #cdcdcd;
 }
-
+.upload-right-container ul{
+  margin-top : 40px;
+  list-style-type : none;
+  width : 80%;
+}
+.upload-right-container ul li{
+  font-size : 14px;
+  background : #8890a7;
+  margin : 5px;
+  padding : 5px;
+  color : #b5c1ce;
+  border-radius : 3px;
+}
 </style>
