@@ -36,4 +36,34 @@
   --col-help-center-navigator-down: #00D377;
 
   --col-upload-get-started-left : #f84242;
+  --col-upload-right-container : #cdcdcd;
+  --col-upload-right-container-ul-li-background : #8890A7;
+  --col-upload-right-container-ul-li-color : #AAB4D1;
+  --col-upload-right-container-ul-li-focus-background : #10D2FF;
+  --col-upload-right-container-ul-li-focus-color : white;
+
+  --col-upload-title : #FFFFFF;
+  --col-upload-subtitle : #000000;
+
+  --start-btn-background : #CE4738;
+  --start-btn-color : #FFFFFF;
+
+  --col-title : #1D262D;
+  --col-title-span : #10D2FF;
+  --col-subtitle : #1D262D;
+
+  --col-control-div : #C3CDDD;
+
+  --next-step-btn : #C3CDDD;
+
+  --col-text-form-border : #E9EFF4;
+  --col-text-form-color : #10D2FF;
+  --col-text-form-placeholder : #C3CDDD;
+
+  --col-error-text : red;
+
+  --col-preview-container-border : black;
+  --col-preview-container-boxshadow : #aab4d1;
+  --col-preview-title : #10D2FF;
+
 }

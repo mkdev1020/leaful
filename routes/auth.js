@@ -4,6 +4,7 @@ const jwtDecode = require('jwt-decode');
 const Router = require('@koa/router');
 const router = new Router();
 
+
 const models = require('../models');
 models.sequelize.options.logging = false;
 
@@ -178,5 +179,30 @@ router
     };
   }
 );
+
+router
+  .post(
+    '/sign-up',
+
+    validateBody({
+      first_name: { presence: true },
+      last_name: { presence: true },
+      email: { presence: true },
+      password: { presence: true },
+    }),
+
+    async (ctx, next) => {
+      console.log('body', ctx.request.body)
+      try {
+        let user = await models.User.insertUser(ctx.request.body)
+        console.log(user)
+        ctx.status = 200;
+      }
+      catch (e) {
+        console.log(e)
+        ctx.status = 500;
+      }
+    }
+  );
 
 module.exports = router;

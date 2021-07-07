@@ -4,6 +4,9 @@ const bcrypt = require('bcrypt');
 const { Op } = require('sequelize');
 const { DateTime } = require('luxon');
 
+// const bcrypt = require('bcryptjs');
+// const jwt = require('jsonwebtoken');
+
 const { clearThrottlerForId } = require('../middleware/throttler');
 
 module.exports = (sequelize) => {
@@ -1214,6 +1217,21 @@ module.exports = (sequelize) => {
       where: { users_id: this.id },
     });
     return permissions;
+  };
+
+  User.insertUser = async function(data) {
+    console.log('insert user', data)
+    const salt = await bcrypt.genSalt(10);
+    const password = await bcrypt.hash(data.password, salt);
+
+    return user = await User.create({
+      first_name: data.first_name,
+      last_name: data.last_name,
+      username: data.email,
+      email: data.email,
+      password: password,
+      password_hash: password
+    })
   };
 
   return User;

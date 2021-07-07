@@ -123,7 +123,7 @@
               </div>
 
               <div class="" v-else>
-                No Account? <a href="#">Sign Up</a>
+                No Account? <nuxt-link to="/test/sign-up">Sign Up</nuxt-link>
               </div>
             </div>
 

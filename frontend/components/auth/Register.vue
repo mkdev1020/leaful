@@ -326,13 +326,29 @@ export default {
       try {
         this.loading = true;
         this.invalidCredentials = false;
-        // await this.$sdk.authenticate({
-        //   username: this.email,
-        //   password: this.password,
-        // });
+        const str = this.name.split(' ')
+
+        let first_name = ''
+        let last_name = ''
+        if ( str.length > 2) {
+          let user = this.name.split('/')
+          first_name = user[0]
+          last_name = user[1]
+        } else if( str.length === 2 ) {
+          let user = this.name.split(' ')
+          first_name = user[0]
+          last_name = user[1]
+        }
+
+        await this.$sdk.register({
+          first_name: first_name,
+          last_name: last_name,
+          email: this.email,
+          password: this.password
+        });
 
         this.successfulLogin = true;
-
+        // this.$router.push('/test/homepage-layout')
         // await new Promise(resolve => window.setTimeout(resolve, 500));
         // this.$sdk.finishAuthentication();
         this.isSubmitted = true

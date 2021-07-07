@@ -296,6 +296,10 @@ class Sdk {
     });
   }
 
+  async register(data) {
+    return await this.post('/auth/sign-up', data);
+  }
+
 }
 
 module.exports.Sdk = Sdk;

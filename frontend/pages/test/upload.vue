@@ -1,6 +1,6 @@
 <template>
   <div>
-    <input type="file" hiddden>
+    <input type="file" hidden>
     <button type="button" @click="submit">Submit</button>
   </div>
 </template>
@@ -26,4 +26,4 @@ export default {
 </script>
 <style scoped>
 
-</style>>
+</style>

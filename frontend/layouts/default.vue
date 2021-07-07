@@ -19,6 +19,7 @@ export default {
     Login,
     HelpCenter,
     Register,
+    Upload
   },
   computed: {
     isAuthPromptShowing() {
