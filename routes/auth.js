@@ -168,6 +168,36 @@ router
     }
 
     const accessToken = user.getNewAccessToken();
+    const refreshToken = user.getRefreshToken();
+
+    // ignore if empty address
+    if (ctx.ip !== '::1') {
+      await ctx.user.markIpRecognized(ctx.ip);
+    }
+
+    ctx.body = {
+      accessToken,
+      refreshToken
+    };
+  }
+);
+
+
+router
+.post(
+  '/refresh-token',
+  async (ctx, next) => {
+    // const user = ctx.user;
+
+    const doesMatch = jwt.decode(ctx.request.body.refresh_token);
+    if (!doesMatch) {
+      ctx.status = 403;
+      ctx.body = { message: 'Incorrect credentials' };
+      return;
+    }
+
+    const accessToken = user.getNewAccessToken();
+    // const refreshToken = user.getRefreshToken();
 
     // ignore if empty address
     if (ctx.ip !== '::1') {

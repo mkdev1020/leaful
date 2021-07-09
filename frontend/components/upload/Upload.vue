@@ -250,10 +250,16 @@ export default {
   font-weight : 600;
   color : var(--col-text-form-color);
   text-indent: 15px;
-  margin : 15px 0px;
+  margin : 5px 5px 5px 0px;
 }
-.text-form::placeholder{
+.text-form::placeholder {
   color : var(--col-text-form-placeholder);
+}
+.lg-text {
+  width : 404px;
+}
+.md-text {
+  width : 200px;
 }
 .hint-text {
   font : 400 14px "Nunito", sans-serif;
@@ -263,5 +269,14 @@ export default {
   font-size: 12px;
   color: var(--col-error-text);
   height: 20px;
+}
+.del-link {
+  font-weight : 900;
+  color : var(--col-del-link);
+  opacity : .5;
+  cursor : pointer;
+}
+.del-link:hover {
+  opacity : 1;
 }
 </style>

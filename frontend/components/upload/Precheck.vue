@@ -1,7 +1,11 @@
 <template>
   <div class="precheck-left-container">
     <div class="title">New Resource: <span>Precheck</span></div>
-    <div class="sub-title">Let's make sure your resource qualifies for publication on Learningful.</div>
+    <div class="sub-title">
+        <span>
+            Let's make sure your resource qualifies for publication on Learningful.
+        </span>
+    </div>
 
     <ul>
       <template v-for="(item, index) in precheck_list">
@@ -15,7 +19,7 @@
     </ul>
 
     <div class="control-div">
-      <div>Uploading: <b>Untitled Resource</b></div>
+      <span>Uploading: <b>Untitled Resource</b></span>
       <div>
         <button class="next-step-btn" @click="nextFromPrecheck()">Next</button>
       </div>

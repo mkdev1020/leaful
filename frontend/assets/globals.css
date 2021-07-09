@@ -66,4 +66,7 @@
   --col-preview-container-boxshadow : #aab4d1;
   --col-preview-title : #10D2FF;
 
+  --col-del-link : #10D2FF;
+  --grade-level-btn : #C3CDDD;
+  --grade-level-btn-selected : #10D2FF;
 }

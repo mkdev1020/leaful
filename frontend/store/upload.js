@@ -4,7 +4,11 @@ export const state = {
   step : -1,
   precheck_list : [],
   title : '',
-  type : ''
+  type : '',
+  subject : '',
+  description : '',
+  grade_level : {},
+  skill : []
 }
 
 export const getters = {
@@ -17,7 +21,11 @@ export const mutations = {
   GOTO_NEXT_UPLOAD_STEP : (state) => { state.step++; },
   SET_UPLOAD_PRECHECK_LIST : (state, value) => { state.precheck_list = value },
   SET_UPLOAD_TITLE : (state, value) => { state.title = value },
-  SET_UPLOAD_TYPE : (state, value) => { state.type = value }
+  SET_UPLOAD_TYPE : (state, value) => { state.type = value },
+  SET_UPLOAD_SUBJECT : (state, value) => { state.subject = value },
+  SET_UPLOAD_DESCRIPTION : (state, value) => { state.description = value },
+  SET_UPLOAD_GRADE_LEVEL : (state, value) => { state.grade_level = value },
+  SET_UPLOAD_SKILL : (state, value) => { state.skill = value },
 }
 
 export const actions = {
@@ -35,6 +43,5 @@ export const actions = {
       console.log(exceptions.response)
     }
   },
-
 
 }

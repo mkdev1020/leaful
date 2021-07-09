@@ -164,6 +164,30 @@ module.exports = (sequelize) => {
     return jwt.compact();
   };
 
+  User.prototype.getRefreshToken = function(claimOverrides = {}) {
+    // TODO: shouldn't be hard-coded
+    const signingKey = '12341234';
+    const baseClaims = {
+      sub: this.id,
+      iat: DateTime.now().toUTC().toSeconds(),
+      iss: "https://teachagogo.com/",
+      scopes: [],
+      exp: DateTime.now().toUTC().plus({ hours: 15 * 24 }).toJSDate(),
+    }
+
+    if (this.role === 'admin') {
+      baseClaims.scopes.push('admin');
+    }
+
+    const claims = Object.assign({}, baseClaims, claimOverrides);
+
+    const jwt = njwt.create(claims, signingKey);
+    if (claims.exp) {
+      jwt.setExpiration(claims.exp);
+    }
+    return jwt.compact();
+  };
+
   User.prototype.doesPasswordMatch = function(password) {
     const doesMatch = bcrypt.compareSync(password, this.password_hash);
     return doesMatch;
