@@ -202,4 +202,18 @@ router
   }
 );
 
+// router
+// .put(
+//   '/bulk-email',
+//   guardAccessToken,
+//   guardAdmin,
+//   async (ctx) => {
+//     const userId = ctx.request.params.id;
+//     const user = await models.User.findByPk(userId);
+//     ctx.body = {
+//       message: 'success',
+//     };
+//   }
+// );
+
 module.exports = router;

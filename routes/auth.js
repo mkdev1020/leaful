@@ -4,7 +4,6 @@ const jwtDecode = require('jwt-decode');
 const Router = require('@koa/router');
 const router = new Router();
 
-
 const models = require('../models');
 models.sequelize.options.logging = false;
 
@@ -15,6 +14,7 @@ const { validateBody } = require('../middleware/validators');
 const { guardAccessToken } = require('../middleware/guards');
 const { requireCaptcha } = require('../middleware/captcha');
 const throttler = require('../middleware/throttler');
+const {Model} = require("sequelize");
 
 function queryToBody() {
   return async (ctx, next) => {
@@ -188,21 +188,25 @@ router
   '/refresh-token',
   async (ctx, next) => {
     // const user = ctx.user;
+    const token = ctx.request.body.refresh_token;
+    const signingKey = '12341234';
+    let accessToken = ''
 
-    const doesMatch = jwt.decode(ctx.request.body.refresh_token);
-    if (!doesMatch) {
+    try {
+      let verifiedJwt = njwt.verify(token, signingKey);
+      let user = await models.User.getUserByTokenId(verifiedJwt.body.sub)
+      accessToken = user.getNewAccessToken();
+    } catch(e) {
       ctx.status = 403;
       ctx.body = { message: 'Incorrect credentials' };
       return;
     }
-
-    const accessToken = user.getNewAccessToken();
     // const refreshToken = user.getRefreshToken();
 
     // ignore if empty address
-    if (ctx.ip !== '::1') {
-      await ctx.user.markIpRecognized(ctx.ip);
-    }
+    // if (ctx.ip !== '::1') {
+    //   await ctx.user.markIpRecognized(ctx.ip);
+    // }
 
     ctx.body = {
       accessToken,

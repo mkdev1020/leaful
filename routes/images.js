@@ -6,6 +6,7 @@ const send = require('koa-send');
 const router = new Router();
 
 const { Image } = require('../lib/imageProcessor');
+const { RequestError } = require('./error');
 
 router.use('/:sortPath*/:imageName', async (ctx, next) => {
   const paramSpec = {

@@ -140,6 +140,27 @@ module.exports = (sequelize) => {
     return accessToken;
   };
 
+  User.calculateTotalEligiblePayouts = async function() {
+    const users = await User.findAll({ where: {} });
+
+    const totals = await Promise.all(users.map(user => {
+      return (async () => {
+        return await user.calculateEligiblePayout();
+      })();
+    }));
+
+    let total = 0;
+    for (const amount of totals) {
+      total += amount;
+    }
+
+    return total;
+  };
+
+  User.findAllByIds = async function(userIds) {
+    return await User.findAll({ where: { id: { [Op.in]: Array.from(userIds) } } });
+  };
+
   User.prototype.getNewAccessToken = function(claimOverrides = {}) {
     // TODO: shouldn't be hard-coded
     const signingKey = '12341234';
@@ -964,6 +985,7 @@ module.exports = (sequelize) => {
   User.prototype.getPendingPayout = async function() {
     return await UserTransaction.findOne({
       where: {
+        users_id: this.id,
         type  : 'payout',
         status: 'awaiting_approval',
       },
@@ -998,13 +1020,35 @@ module.exports = (sequelize) => {
     if (!pendingPayout) {
       throw new Error(`There are no pending payouts to approve!`);
     }
-
     const payoutAmount = Math.abs(pendingPayout.amount);
 
     await this.payoutToPaypal(payoutAmount);
 
+    await this.sendEmail('payout-approved', {
+      name: this.first_name,
+      amount: payoutAmount,
+    });
+
     await UserTransaction.update(
       { status: 'completed' },
+      { where: { id: pendingPayout.id } },
+    );
+  };
+
+  User.prototype.rejectPayout = async function() {
+    const pendingPayout = await this.getPendingPayout();
+    if (!pendingPayout) {
+      throw new Error(`There are no pending payouts to approve!`);
+    }
+    const payoutAmount = Math.abs(pendingPayout.amount);
+
+    await this.sendEmail('payout-rejected', {
+      name: this.first_name,
+      amount: payoutAmount,
+    });
+
+    await UserTransaction.update(
+      { status: 'rejected' },
       { where: { id: pendingPayout.id } },
     );
   };
@@ -1257,6 +1301,10 @@ module.exports = (sequelize) => {
       password_hash: password
     })
   };
+
+  User.getUserByTokenId = async function(id) {
+    return await User.findByPk(id);
+  }
 
   return User;
 }
