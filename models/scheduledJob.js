@@ -1,6 +1,7 @@
 
 const { DateTime } = require('luxon');
 const cronjsMatcher = require('@datasert/cronjs-matcher');
+const { EmailProxyThread } = require('.');
 
 module.exports = (sequelize) => {
   const ScheduledJob = require(__dirname + '/definitions/scheduled_jobs')(sequelize);
@@ -8,6 +9,7 @@ module.exports = (sequelize) => {
   const User            = require(__dirname + '/user')(sequelize);
   const EmailTemplate   = require(__dirname + '/emailTemplate')(sequelize);
   const EmailScheduledSend = require(__dirname + '/emailScheduledSend')(sequelize);
+  const EmailProxythread = require(__dirname + '/emailProxyThread')(sequelize);
   const Referral        = require(__dirname + '/referral')(sequelize);
   const ScheduledJobLog = require(__dirname + '/scheduledJobLog')(sequelize);
   const PurgedAccount   = require(__dirname + '/purgedAccount')(sequelize);
@@ -176,6 +178,10 @@ module.exports = (sequelize) => {
 
   ScheduledJob.registerJobFunction('compile site stats', async() => {
     await siteStat.procureDataForToday();
+  });
+
+  ScheduledJob.registerJobFunction('forward emails', async() => {
+    await EmailProxyThread.forwardInboxMail();
   });
 
   return ScheduledJob;

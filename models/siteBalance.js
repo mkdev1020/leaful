@@ -1,3 +1,4 @@
+const { DateTime } = require('luxon');
 
 module.exports = (sequelize) => {
   const SiteBalance = require(__dirname + '/definitions/site_balances')(sequelize);
@@ -22,6 +23,42 @@ module.exports = (sequelize) => {
         plain: true,
       }
     );
+  };
+
+  function getDateRange(startDateString, endDateString) {
+    const range = [];
+    const startDateTime = DateTime.fromISO(startDateString);
+    const endDateTime = DateTime.fromISO(endDateString);
+
+    let currDateTime = startDateTime;
+    range.push(currDateTime);
+    while (endDateTime.diff(currDateTime) > 0) {
+      currDateTime = currDateTime.plus({ days: 1 });
+      range.push(currDateTime);
+    }
+    return range;
+  }
+
+  SiteBalance.procureAllForDateRange = async function(startDateString, endDateString) {
+    return await Promise.all(getDateRange(startDateString, endDateString).map((date) => {
+      return SiteBalance.procureForDate(date.toISO());
+    }));
+
+    // return await sequelize.query(
+    //   `
+    //   SELECT *
+    //   FROM \`site_balances\`
+    //   WHERE
+    //     DATE(\`record_date\`) >= DATE(:startDate)
+    //     AND
+    //     DATE(\`record_date\`) <= DATE(:endDate)
+    //   `,
+    //   {
+    //     replacements: { startDate, endDate },
+    //     model: SiteBalance,
+    //     mapToModel: true,
+    //   }
+    // );
   };
 
   SiteBalance.procureForDate = async function(date) {

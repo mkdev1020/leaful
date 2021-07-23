@@ -9,6 +9,16 @@ module.exports = (sequelize) => {
 
   const SiteSetting = require(__dirname + '/siteSetting')(sequelize);
   const Advertisement = require(__dirname + '/advertisement')(sequelize);
+  const ResourcePreview = require(__dirname + '/resourcePreview')(sequelize);
+  const ResourceFile    = require(__dirname + '/resourceFile')(sequelize);
+
+  Resource.hasMany(ResourcePreview, {
+    foreignKey: 'resources_id',
+  });
+
+  Resource.hasMany(ResourceFile, {
+    foreignKey: 'resources_id',
+  });
 
   Resource.FILTER_FOR_TYPE = {
     preferred: `
@@ -176,6 +186,47 @@ module.exports = (sequelize) => {
 
     return results[results.length - 2];
   };
+
+  Resource.prototype.approve = async function(fields = {}) {
+    const User = require(__dirname + '/user')(sequelize);
+
+    await this.update(Object.assign({},
+      {
+        approval_status: 'approved',
+        rejected_at: null,
+        moderator_comment: null,
+      },
+      fields
+    ));
+    await this.reload();
+
+    const user = await User.findByPk(this.users_id);
+    await user.sendEmail('resource-approved', {
+      name: user.first_name,
+      resource: this,
+    });
+  };
+
+  Resource.prototype.reject = async function(fields = {}) {
+    const User = require(__dirname + '/user')(sequelize);
+
+    await this.update(Object.assign({},
+      {
+        approval_status: 'rejected',
+        rejected_at: DateTime.now().toUTC().toISO(),
+        moderator_comment: null,
+      },
+      fields
+    ));
+    await this.reload();
+
+    const user = await User.findByPk(this.users_id);
+    await user.sendEmail('resource-rejected', {
+      name: user.first_name,
+      resource: this,
+    });
+  };
+
 
   class ResourcePager {
 

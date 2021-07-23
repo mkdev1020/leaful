@@ -4,7 +4,7 @@ module.exports = (sequelize) => {
   const HelpCenterEntry = require(__dirname + '/definitions/help_center_entries')(sequelize);
 
   HelpCenterEntry.getRandomProTip = async function() {
-    return await HelpCenterEntry.findAll({
+    return await HelpCenterEntry.findOne({
       where: {
         image_locator: {
           [Op.not]: null,
@@ -47,8 +47,10 @@ module.exports = (sequelize) => {
     item.short_title = data.short_title || item.short_title;
     item.long_title = data.long_title || item.long_title;
     item.body = data.body || item.body;
-    item.image_locator = data.image || item.image_locator;
-
+    item.order_index = data.order_index >= 0 ? data.order_index : item.order_index;
+    item.image_locator = data.imageEdited ? `/api/images/test-api/${data.image_locator}` : item.image_locator;
+    item.accent_color = data.accent_color || item.accent_color;
+    item.tos_updated_at = data.tos_updated_at === false ? null : sequelize.literal('CURRENT_TIMESTAMP');
     item.save();
 
     return item
