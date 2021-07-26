@@ -275,5 +275,45 @@ module.exports = (sequelize) => {
     return total;
   };
 
+  Advertisement.prototype.approve = async function(fields = {}) {
+    const User = require(__dirname + '/user')(sequelize);
+
+    await this.update(Object.assign({},
+      {
+        approval_status: 'approved',
+        rejected_at: null,
+        moderator_comment: null,
+      },
+      fields
+    ));
+    await this.reload();
+
+    const user = await User.findByPk(this.users_id);
+    await user.sendEmail('ad-approved', {
+      name: user.first_name,
+      ad: this,
+    });
+  };
+
+  Advertisement.prototype.reject = async function(fields = {}) {
+    const User = require(__dirname + '/user')(sequelize);
+
+    await this.update(Object.assign({},
+      {
+        approval_status: 'rejected',
+        rejected_at: DateTime.now().toUTC().toISO(),
+        moderator_comment: null,
+      },
+      fields
+    ));
+    await this.reload();
+
+    const user = await User.findByPk(this.users_id);
+    await user.sendEmail('ad-rejected', {
+      name: user.first_name,
+      ad: this,
+    });
+  };
+
   return Advertisement;
 }

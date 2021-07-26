@@ -49,6 +49,24 @@ module.exports = sequelize => {
       comment: null,
       field: "last_activity"
     },
+    is_support_thread: {
+      type: DataTypes.INTEGER(1),
+      allowNull: false,
+      defaultValue: 0,
+      primaryKey: false,
+      autoIncrement: false,
+      comment: null,
+      field: "is_support_thread"
+    },
+    is_resolved: {
+      type: DataTypes.INTEGER(1),
+      allowNull: false,
+      defaultValue: 0,
+      primaryKey: false,
+      autoIncrement: false,
+      comment: null,
+      field: "is_resolved"
+    },
     created_at: {
       type: DataTypes.DATE,
       allowNull: false,

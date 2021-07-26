@@ -116,6 +116,24 @@ module.exports = sequelize => {
       comment: null,
       field: "approval_status"
     },
+    rejected_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null,
+      primaryKey: false,
+      autoIncrement: false,
+      comment: null,
+      field: "rejected_at"
+    },
+    moderator_comment: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      defaultValue: null,
+      primaryKey: false,
+      autoIncrement: false,
+      comment: null,
+      field: "moderator_comment"
+    },
     curator_score: {
       type: DataTypes.INTEGER(11),
       allowNull: false,

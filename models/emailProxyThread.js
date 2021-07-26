@@ -2,6 +2,7 @@
 const configFile = process.env.NODE_ENV === 'test' ? 'config-test' : 'config';
 const config = require(__dirname + `/../${configFile}`);
 
+const { Op } = require("sequelize");
 const { v4: uuidv4 } = require('uuid');
 const { ImapFlow } = require('imapflow');
 const { DateTime } = require('luxon');
@@ -52,6 +53,7 @@ module.exports = (sequelize) => {
 
   const User          = require(__dirname + '/user')(sequelize);
   const EmailTemplate = require(__dirname + '/emailTemplate')(sequelize);
+  const SupportThreadMessage = require(__dirname + '/supportThreadMessage')(sequelize);
 
   const imapConnection = new ImapConnection();
 
@@ -96,8 +98,15 @@ module.exports = (sequelize) => {
       return;
     }
 
-    const directTo = await thread.getEmailDirectDestination(fromEmailAddress);
     const responseText = EmailProxyThread.parseEmailResponse(email.text);
+
+    if (thread.is_support_thread) {
+      await thread.handleSupportEmailReply(responseText);
+      await EmailProxyThread.flagMessage(message);
+      return;
+    }
+
+    const directTo = await thread.getEmailDirectDestination(fromEmailAddress);
     const proxyAddress = thread.getProxyAddress();
 
     const responseEmail = EmailTemplate.newEmail();
@@ -178,6 +187,26 @@ module.exports = (sequelize) => {
     }
   };
 
+  EmailProxyThread.findActiveSupportThreadForUser = async function(user) {
+    return await EmailProxyThread.findOne({
+      where: {
+        [Op.and]: [
+          { users_id_a: user.id },
+          { is_support_thread: 1 },
+        ],
+      },
+    });
+  };
+
+  EmailProxyThread.getAllUnresolvedSupportThreads = async function() {
+    const threads = await EmailProxyThread.findAll({
+      where: { is_resolved: false },
+      order: [['created_at', 'ASC']],
+    });
+
+    return threads;
+  };
+
   EmailProxyThread.prototype.getParticipantDisplayNames = async function(fromEmailAddress) {
     const [userADetails, userBDetails] = await Promise.all([
       User.findOne({
@@ -248,6 +277,68 @@ module.exports = (sequelize) => {
     }
     throw new Error(`The email "from" address does not match any valid addresses in the thread!`);
   }
+
+  EmailProxyThread.prototype.sendSupportEmailReplyAdmin = async function(body) {
+    await SupportThreadMessage.create({
+      email_proxy_threads_id: this.id,
+      // admin user
+      users_id_from: this.users_id_b,
+      message: body,
+    });
+
+    const user = await User.findByPk(this.users_id_a);
+    const directTo = user.email;
+
+    const proxyAddress = this.getProxyAddress();
+
+    const responseEmail = EmailTemplate.newEmail();
+    responseEmail.setFromEmailAddress(proxyAddress);
+    responseEmail.setEmailAddress(directTo);
+    await responseEmail.setTemplate('inquiry-forwarded-message');
+
+    responseEmail.setValues({
+      recipientName: user.first_name + ' ' + user.last_name,
+      senderName: 'Support',
+      response: body,
+    });
+    await responseEmail.send();
+
+    await this.update({
+      is_resolved: true,
+    });
+  };
+
+  EmailProxyThread.prototype.handleSupportEmailReply = async function(responseText) {
+    await SupportThreadMessage.create({
+      email_proxy_threads_id: this.id,
+      users_id_from: this.users_id_a,
+      message: responseText,
+    });
+
+    await this.update({
+      is_resolved: false,
+    });
+  };
+
+  EmailProxyThread.prototype.sendInitialSupportThreadMessage = async function(messageText) {
+    await SupportThreadMessage.create({
+      email_proxy_threads_id: this.id,
+      users_id_from: this.users_id_a,
+      message: messageText,
+    });
+
+    await this.update({
+      is_resolved: false,
+    });
+  };
+
+  EmailProxyThread.prototype.getAllSupportMessages = async function() {
+    return await SupportThreadMessage.findAll({
+      where: {
+        email_proxy_threads_id: this.id,
+      },
+    });
+  };
 
   return EmailProxyThread;
 }
