@@ -16,6 +16,7 @@ export const state = () => ({
   isAuthPromptShowing: false,
   postAuthRedirect: null,
   postAuthReload: false,
+  user: {},
   requestLimit: Object.assign({}, requestLimitDefault),
 });
 
