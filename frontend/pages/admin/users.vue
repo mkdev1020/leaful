@@ -72,95 +72,95 @@
 
         <div class="stats-strip__divider" style="margin: 0 25px" />
 
-        <div class="user-details">
-          <div class="user-details__arrows">
-            <div class="user-details__arrow user-details__arrow--up">
+        <div class="detail-line">
+          <div class="detail-line__arrows">
+            <div class="detail-line__arrow detail-line__arrow--up">
               <img src="/api/images/base/up_arrow.svg">
             </div>
-            <div class="user-details__arrow user-details__arrow--down">
+            <div class="detail-line__arrow detail-line__arrow--down">
               <img src="/api/images/base/up_arrow.svg">
             </div>
           </div>
 
-          <div class="user-details__list" v-if="selectedUser">
+          <div class="detail-line__list" v-if="selectedUser">
 
-            <user-detail-line name="Name" @save="saveName" :value="selectedUser.first_name + ' ' + selectedUser.last_name">
+            <detail-line name="Name" @save="saveName" :value="selectedUser.first_name + ' ' + selectedUser.last_name">
               {{ selectedUser.last_name }}, {{ selectedUser.first_name }}
-            </user-detail-line>
+            </detail-line>
 
-            <user-detail-line name="Alias" @save="saveAlias" :value="selectedUser.alias_first_name ? (selectedUser.alias_first_name + ' ' + selectedUser.alias_last_name) : ''">
+            <detail-line name="Alias" @save="saveAlias" :value="selectedUser.alias_first_name ? (selectedUser.alias_first_name + ' ' + selectedUser.alias_last_name) : ''">
               <span v-if="selectedUser.alias_first_name">
                 {{ selectedUser.alias_last_name }}, {{ selectedUser.alias_first_name }}
               </span>
               <span v-else>None</span>
-            </user-detail-line>
+            </detail-line>
 
-            <user-detail-line name="Username" :value="selectedUser.username" @save="(val) => setUserProperty('username', val)">
+            <detail-line name="Username" :value="selectedUser.username" @save="(val) => setUserProperty('username', val)">
               @{{ selectedUser.username }}
-            </user-detail-line>
+            </detail-line>
 
-            <user-detail-line readonly name="Account Created">
+            <detail-line readonly name="Account Created">
               {{ selectedUser.created_at }}
-            </user-detail-line>
+            </detail-line>
 
-            <user-detail-line readonly name="Last Active">
+            <detail-line readonly name="Last Active">
               {{ selectedUser.last_sign_in_date || 'Never' }}
-            </user-detail-line>
+            </detail-line>
 
-            <user-detail-line name="Account Status" readonly>
+            <detail-line name="Account Status" readonly>
               {{
                 selectedUser.is_dormant
                   ? 'Dormant'
                   : (selectedUser.is_deactivated ? 'Deactivated' : 'Active')
               }}
-            </user-detail-line>
+            </detail-line>
 
-            <user-detail-line readonly name="Membership">
+            <detail-line readonly name="Membership">
               {{ selectedUser.is_recent_donator ? 'Paid' : 'Free' }}
-            </user-detail-line>
+            </detail-line>
 
-            <user-detail-line name="Admin Level"       :value="selectedUser.role === 'admin'" @save="toggleAdminStatus" enabler />
-            <user-detail-line name="Synthetic Persona" :value="selectedUser.is_zombie"        @save="(val) => setUserProperty('is_zombie', val)" enabler />
-            <user-detail-line name="USA Resident"      :value="selectedUser.is_usa_resident"  @save="(val) => setUserProperty('is_usa_resident', val)" enabler />
+            <detail-line name="Admin Level"       :value="selectedUser.role === 'admin'" @save="toggleAdminStatus" enabler />
+            <detail-line name="Synthetic Persona" :value="selectedUser.is_zombie"        @save="(val) => setUserProperty('is_zombie', val)" enabler />
+            <detail-line name="USA Resident"      :value="selectedUser.is_usa_resident"  @save="(val) => setUserProperty('is_usa_resident', val)" enabler />
 
-            <user-detail-line name="Primary Email" :value="selectedUser.email" @save="(val) => setUserProperty('email', val)" >
+            <detail-line name="Primary Email" :value="selectedUser.email" @save="(val) => setUserProperty('email', val)" >
               {{ selectedUser.email }}
-            </user-detail-line>
+            </detail-line>
 
             <!-- TODO TODO TODO -->
-            <!-- <user-detail-line name="Recovery Email" @save="doSave" :value="selectedUser.">
+            <!-- <detail-line name="Recovery Email" @save="doSave" :value="selectedUser.">
               {{ selectedUser. }}
-            </user-detail-line> -->
+            </detail-line> -->
 
             <!-- TODO TODO TODO -->
-            <!-- <user-detail-line name="Payout Email" @save="doSave" :value="selectedUser.">
+            <!-- <detail-line name="Payout Email" @save="doSave" :value="selectedUser.">
               {{ selectedUser. }}
-            </user-detail-line> -->
+            </detail-line> -->
 
-            <user-detail-line name="Password" readonly>
+            <detail-line name="Password" readonly>
               <span v-if="selectedUser.resetLinkSent">Sent reset email!</span>
               <a class="link" v-else @click="sendResetLink">Reset</a>
-            </user-detail-line>
+            </detail-line>
 
             <!-- TODO TODO TODO -->
-            <!-- <user-detail-line name="Security Pattern" enabler /> -->
+            <!-- <detail-line name="Security Pattern" enabler /> -->
 
-            <user-detail-line name="Resources Published" readonly>
+            <detail-line name="Resources Published" readonly>
               {{ selectedUser.details.resources }}
-            </user-detail-line>
+            </detail-line>
 
             <!-- TODO TODO TODO -->
-            <!-- <user-detail-line name="Featured Resources" @save="doSave" readonly></user-detail-line> -->
+            <!-- <detail-line name="Featured Resources" @save="doSave" readonly></detail-line> -->
 
-            <user-detail-line name="Downloads" readonly>
+            <detail-line name="Downloads" readonly>
               {{ selectedUser.downloads }}
-            </user-detail-line>
+            </detail-line>
 
-            <user-detail-line name="Follow Ratio" readonly>
+            <detail-line name="Follow Ratio" readonly>
               {{ selectedUser.details.followers }} | {{ selectedUser.details.following }}
-            </user-detail-line>
+            </detail-line>
 
-            <user-detail-line name="Ads Running" readonly>
+            <detail-line name="Ads Running" readonly>
               <span
                 v-for="(ad, index) in selectedUser.details.adsRunning"
                 :key="ad.id"
@@ -169,38 +169,38 @@
                 <!-- TODO TODO TODO -->
                 <a href='#'>{{ ad.id }}</a>
               </span>
-            </user-detail-line>
+            </detail-line>
 
-            <user-detail-line name="Income" readonly>
+            <detail-line name="Income" readonly>
               {{ (selectedUser.details.totalIncome / 100) | currency }}
-            </user-detail-line>
+            </detail-line>
 
-            <user-detail-line name="Tips" readonly>
+            <detail-line name="Tips" readonly>
               {{ (selectedUser.details.totalTips / 100) | currency }}
-            </user-detail-line>
+            </detail-line>
 
-            <user-detail-line name="Donations" readonly>
+            <detail-line name="Donations" readonly>
               {{ (selectedUser.details.totalDonations / 100) | currency }}
-            </user-detail-line>
+            </detail-line>
 
-            <user-detail-line name="Total Earnings" readonly>
+            <detail-line name="Total Earnings" readonly>
               {{ ((selectedUser.details.totalIncome + selectedUser.details.totalTips) / 100) | currency }}
-            </user-detail-line>
+            </detail-line>
 
-            <user-detail-line name="Balance" @save="adjustBalance" :value="selectedUser.balance / 100">
+            <detail-line name="Balance" @save="adjustBalance" :value="selectedUser.balance / 100">
               {{ (selectedUser.balance / 100) | currency }}
-            </user-detail-line>
+            </detail-line>
 
-            <user-detail-line name="Login"       :value="selectedUser.permissions.login"     @save="togglePermission('login')"     enabler />
-            <user-detail-line name="Download"    :value="selectedUser.permissions.download"  @save="togglePermission('download')"  enabler />
-            <user-detail-line name="Editing"     :value="selectedUser.permissions.editing"   @save="togglePermission('editing')"   enabler />
-            <user-detail-line name="Messaging"   :value="selectedUser.permissions.messages"  @save="togglePermission('messages')"  enabler />
-            <user-detail-line name="Settings"    :value="selectedUser.permissions.controls"  @save="togglePermission('controls')"  enabler />
-            <user-detail-line name="Income"      :value="selectedUser.permissions.income"    @save="togglePermission('income')"    enabler />
-            <user-detail-line name="Payouts"     :value="selectedUser.permissions.payouts"   @save="togglePermission('payouts')"   enabler />
-            <user-detail-line name="Payments"    :value="selectedUser.permissions.payments"  @save="togglePermission('payments')"  enabler />
-            <user-detail-line name="Advertising" :value="selectedUser.permissions.advertise" @save="togglePermission('advertise')" enabler />
-            <user-detail-line name="Following"   :value="selectedUser.permissions.follow"    @save="togglePermission('follow')"    enabler />
+            <detail-line name="Login"       :value="selectedUser.permissions.login"     @save="togglePermission('login')"     enabler />
+            <detail-line name="Download"    :value="selectedUser.permissions.download"  @save="togglePermission('download')"  enabler />
+            <detail-line name="Editing"     :value="selectedUser.permissions.editing"   @save="togglePermission('editing')"   enabler />
+            <detail-line name="Messaging"   :value="selectedUser.permissions.messages"  @save="togglePermission('messages')"  enabler />
+            <detail-line name="Settings"    :value="selectedUser.permissions.controls"  @save="togglePermission('controls')"  enabler />
+            <detail-line name="Income"      :value="selectedUser.permissions.income"    @save="togglePermission('income')"    enabler />
+            <detail-line name="Payouts"     :value="selectedUser.permissions.payouts"   @save="togglePermission('payouts')"   enabler />
+            <detail-line name="Payments"    :value="selectedUser.permissions.payments"  @save="togglePermission('payments')"  enabler />
+            <detail-line name="Advertising" :value="selectedUser.permissions.advertise" @save="togglePermission('advertise')" enabler />
+            <detail-line name="Following"   :value="selectedUser.permissions.follow"    @save="togglePermission('follow')"    enabler />
 
           </div>
         </div>
@@ -264,92 +264,16 @@
   border-radius: 5px;
 }
 
-.user-details {
-  position: relative;
-  width: 394px;
-}
-
-.user-details__arrows {
-  top: 40px;
-  left: -40px;
-  position: absolute;
-  display: grid;
-  grid-gap: 5px;
-  padding : 5px;
-  background: #e1f0ff;
-}
-
-.user-details__arrow {
-  border-radius: 5px;
-  background: #4a80ff;
-  --size: 20px;
-  width : var(--size);
-  height: var(--size);
-  display: flex;
-  padding: 5px;
-  cursor: pointer;
-}
-
-.user-details__arrow--down img {
-  transform: rotate(180deg);
-}
-
-.user-details__list {
-  max-width: 394px;
-  height: 130px;
-  overflow: scroll;
-}
-
-.user-details__detail {
-  position: relative;
-  border-bottom: 2px solid var(--col-captcha-verify-border-disabled);
-  height: 19px;
-  margin-bottom: 8px;
-  font-size: 14px;
-}
-
-.user-details__title {
-  position: absolute;
-  top : 0;
-  left: 0;
-}
-
-.user-details__value {
-  position: absolute;
-  top  : 0;
-  right: 0;
-  font-weight: bold;
-}
-
-.user-details__value--editable {
-  color: var(--col-captcha-verify-text);
-  cursor: pointer;
-}
-
-.user-details__edits {
-  display: flex;
-  height: 20px;
-}
-
-.user-details__edits button {
-  padding: 2px;
-  margin: 0;
-  border: 1px solid black;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 </style>
 
 <script>
 import { DateTime } from 'luxon';
 
-import UserDetailLine from '../../components/UserDetailLine';
+import DetailLine from '../../components/DetailLine';
 
 export default {
   components: {
-    UserDetailLine,
+    DetailLine,
   },
 
   data() {
