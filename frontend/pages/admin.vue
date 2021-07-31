@@ -10,7 +10,7 @@
           </div>
           <div class="user-summary__stats">
             <div class="user-summary__name">
-              {{ user.alias_first_name }} {{ user.alias_last_name }}
+              {{ fullName }}
             </div>
             <div class="user-summary__summary">
               <div><b>{{ userStats.followers | largeNumberDisplay }}</b> Followers</div>
@@ -165,6 +165,7 @@
   /* XXX */
   /* margin-left: 190px; */
   width: 1024px;
+  height: 190px;
 }
 
 .stats-strip__content {
@@ -305,12 +306,14 @@ export default {
         { route: '/admin/exceptions', icon: 'exceptions' },
       ],
 
-      user: {
-        avatar_locator: '',
-        alias_first_name: '',
-        alias_last_name : '',
-        username: '',
-      },
+      // user: {
+      //   avatar_locator: '',
+      //   alias_first_name: '',
+      //   alias_last_name : '',
+      //   first_name: '',
+      //   last_name : '',
+      //   username: '',
+      // },
 
       userStats: {
         followers: 0,
@@ -324,6 +327,15 @@ export default {
     selectedControl() {
       return this.controlsForRoute[this.$route.path];
     },
+    fullName() {
+      if (this.user.alias_first_name) {
+        return `${this.user.alias_first_name} ${this.alias_last_name}`;
+      }
+      return `${this.user.first_name} ${this.user.last_name}`;
+    },
+    user() {
+      return this.$store.state.main.user;
+    },
   },
 
   methods: {
@@ -333,13 +345,16 @@ export default {
     },
 
     isControlSelected(control) {
-      return control.route === this.$route.path;
+      return this.$route.path.startsWith(control.route);
     },
 
     async fetchUser() {
       const response = await this.$sdk.get('/users/self');
       const json = await response.json();
-      this.user = json.user || {};
+      // this.user = json.user || {};
+      this.$store.commit('main/set', {
+        user: json.user,
+      });
     },
 
     async fetchUserStats() {
