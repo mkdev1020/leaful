@@ -2,10 +2,42 @@
 USE `teachagogo_dev`;
 
 INSERT INTO `users`
-(`role`, `email`, `first_name`, `last_name`, `password_hash`, `donations_options_id`, `username`, `avatar_locator`)
+(`id`, `role`, `email`, `first_name`, `last_name`, `password_hash`, `donations_options_id`, `username`, `avatar_locator`)
 VALUES
-('teacher', 'jknotek@fossil.icu'      , 'Jake', 'Knotek', '$2b$10$ODGrLGXfU.Lg6oMIXq8Qu.R6injZbo2zWtBOb65FpwirD8YmhyjK.', 1, 'jknotek1', '/api/images/letters/J/j2.svg'),
-('admin'  , 'jknotek+admin@fossil.icu', 'Jake', 'Knotek', '$2b$10$ODGrLGXfU.Lg6oMIXq8Qu.R6injZbo2zWtBOb65FpwirD8YmhyjK.', 1, 'jknotek2', '/api/images/letters/J/j3.svg')
+(2, 'teacher', 'jknotek@fossil.icu'      , 'Jake', 'Knotek', '$2b$10$ODGrLGXfU.Lg6oMIXq8Qu.R6injZbo2zWtBOb65FpwirD8YmhyjK.', 1, 'jknotek2', '/api/images/letters/J/j2.svg'),
+(3, 'admin'  , 'jknotek+admin@fossil.icu', 'Jake', 'Knotek', '$2b$10$ODGrLGXfU.Lg6oMIXq8Qu.R6injZbo2zWtBOb65FpwirD8YmhyjK.', 1, 'jknotek3', '/api/images/letters/J/j3.svg'),
+(4, 'teacher', 'jknotek+4@fossil.icu'    , 'Jake', 'Knotek', '$2b$10$ODGrLGXfU.Lg6oMIXq8Qu.R6injZbo2zWtBOb65FpwirD8YmhyjK.', 1, 'jknotek4', '/api/images/letters/J/j4.svg'),
+(5, 'teacher', 'jknotek+5@fossil.icu'    , 'Jake', 'Knotek', '$2b$10$ODGrLGXfU.Lg6oMIXq8Qu.R6injZbo2zWtBOb65FpwirD8YmhyjK.', 1, 'jknotek5', '/api/images/letters/J/j5.svg'),
+(6, 'teacher', 'jknotek+6@fossil.icu'    , 'Jake', 'Knotek', '$2b$10$ODGrLGXfU.Lg6oMIXq8Qu.R6injZbo2zWtBOb65FpwirD8YmhyjK.', 1, 'jknotek6', '/api/images/letters/J/j6.svg')
+;
+
+INSERT INTO `users_transactions`
+(`users_id`, `users_id_related`, `type`, `amount`, `status`, `fingerprint`, `created_at`)
+VALUES
+(4, 1, 'revenue_share', 4000, 'completed'        , '1234', '2021-01-01 01:01:01'),
+(4, 1, 'payout'       , 4000, 'awaiting_approval', '2234', '2021-01-01 01:01:01'),
+(5, 1, 'revenue_share', 5000, 'completed'        , '3234', '2021-01-01 01:01:01'),
+(5, 1, 'payout'       , 5000, 'awaiting_approval', '4234', '2021-01-01 01:01:01'),
+(6, 1, 'revenue_share', 6000, 'completed'        , '5234', '2021-01-01 01:01:01')
+;
+
+INSERT INTO `email_proxy_threads`
+(`id`, `users_id_a`, `users_id_b`, `last_activity`, `is_support_thread`, `is_resolved`, `created_at`, `updated_at`)
+VALUES
+('c6f105ec6a984e58', '4', '1', '2021-07-01 05:01:32', '1', '0', '2021-07-01 05:01:32', '2021-07-05 18:25:59'),
+('c6f105ec6a984e59', '5', '1', '2021-07-01 05:01:32', '1', '0', '2021-07-01 05:01:32', '2021-07-05 18:25:59')
+;
+
+INSERT INTO `support_thread_messages`
+(`email_proxy_threads_id`,`users_id_from`,`message`,`created_at`,`updated_at`)
+VALUES
+('c6f105ec6a984e58',4,'message number 1','2021-07-03 05:01:32','2021-07-02 05:01:32'),
+('c6f105ec6a984e58',1,'response number 1','2021-07-01 05:01:32','2021-07-01 05:01:32'),
+
+('c6f105ec6a984e59',5,'here is my message! it is a little bit long, but that is really just because I need to see how it look on the front-end when some sort of scrolling is required. Now, at first, I was confident the text I had written would span at least 4 lines, but in fact, it turned out to have only spanned 3 lines. So, I continued typing to increase the length of the dummy text.','2021-07-01 05:01:32','2021-07-01 05:01:32'),
+('c6f105ec6a984e59',1,'lorem ipsum dolor sit amet. another message here we go! here is my message! it is a little bit long, but that is really just because I need to see how it look on the front-end when some sort of scrolling is required. Now, at first, I was confident the text I had written would span at least 4 lines, but in fact, it turned out to have only spanned 3 lines. So, I continued typing to increase the length of the dummy text.','2021-07-02 05:01:32','2021-07-02 05:01:32'),
+('c6f105ec6a984e59',1,'another response lorem ipsum dolor sit amet. another message here we go! here is my message! Now, at first, I was confident the text I had written would span at least 4 lines, but in fact, it turned out to have only spanned 3 lines. So, I continued typing to increase the length of the dummy text.','2021-07-03 05:01:32','2021-07-02 05:01:32'),
+('c6f105ec6a984e59',5,'here is my second message! it is a little bit long, but that is really just because I need to see how it look on the front-end when some sort of scrolling is required. Now, at first, I was confident the text I had written would span at least 4 lines, but in fact, it turned out to have only spanned 3 lines. So, I continued typing to increase the length of the dummy text.','2021-07-01 05:01:32','2021-07-01 05:01:32')
 ;
 
 INSERT INTO `help_center_entries`
@@ -13,6 +45,35 @@ INSERT INTO `help_center_entries`
 VALUES
 (1, 'First Entry' , 'The long and mysterious title for the first entry.' , 'But a short body...', '/api/images/test-api/donate-1.jpg', '#ff00ff'),
 (2, 'Second Entry', 'The long and straaaange title for the second entry.', 'And a short body...', '/api/images/test-api/donate-2.jpg', '#00ff00')
+;
+
+INSERT INTO `advertisements`
+(`id`, `ad_type`, `placement`, `title`, `subtitle`, `subject`, `click_url`, `image_url`, `statement`, `spend_per_day`, `start_date`, `end_date`, `approval_status`, `running_status`, `users_id`, `created_at`, `updated_at`)
+VALUES
+(1, 1, 'site', 'title 1', 'subtitle 1', 'subject 1', 'https://example.com/1', '/api/images/test/test.jpg', NULL, '500', '2021-01-01 00:00:00', '2021-01-30 00:00:00', 'awaiting_approval', NULL, 4, '2021-07-06 05:04:44', '2021-07-06 05:04:44'),
+(2, 1, 'site', 'title 2', 'subtitle 2', 'subject 2', 'https://example.com/2', '/api/images/test/test.jpg', NULL, '600', '2021-01-01 00:00:00', '2021-01-30 00:00:00', 'awaiting_approval', NULL, 5, '2021-07-06 05:04:44', '2021-07-06 05:04:44')
+;
+
+INSERT INTO `advertisements_target_grades`
+(`id`,`advertisements_id`,`grade`,`created_at`,`updated_at`)
+VALUES
+(1,1,'5','2021-07-06 05:29:28','2021-07-06 05:29:28'),
+(2,1,'6','2021-07-06 05:29:28','2021-07-06 05:29:28')
+;
+
+INSERT INTO `resources`
+(`id`, `users_id`, `title`, `subtitle`, `curator_score`, `subject_area`, `description`, `keywords`, `skills`, `reading_levels`, `standards`, `grade`, `approval_status`)
+VALUES
+(1, 4, 'title 1', 'sub 1', 50, 'english', 'Here is a short description 1', 'one two three', 'skill1, skill2, skill3', 'r1, r2, r3', 's1, s2', 4, 'awaiting_approval'),
+(2, 5, 'title 2', 'sub 2', 61, 'english', 'Here is a short description 2', 'one two three', 'skill1, skill2, skill3', 'r1, r2, r3', 's1, s2', 5, 'awaiting_approval')
+;
+
+INSERT INTO `resources_previews`
+(`resources_id`, `locator`, `order_index`)
+VALUES
+(1, '/api/images/test/test.jpg?w=201', 1),
+(1, '/api/images/test/test.jpg?w=200', 0),
+(2, '/api/images/test/test.jpg', 0)
 ;
 
 INSERT INTO `site_stats`
@@ -49,4 +110,40 @@ VALUES
 ('2021-01-29', 15,      57,     70,     13,     86,     12,     97,     93,     7,      58,     58,     68,     33,     30,     25,     25, 47),
 ('2021-01-30', 10,      83,     14,     17,     6,      68,     30,     10,     53,     66,     23,     27,     28,     52,     65,     90, 82),
 ('2021-01-31', 34,      35,     55,     59,     40,     12,     64,     66,     36,     22,     20,     12,     48,     79,     48,     81, 43)
+;
+
+INSERT INTO `site_balances`
+(`record_date`, `affiliate_revenue`, `expenses`)
+VALUES
+('2021-01-01', 70,      56),
+('2021-01-02', 86,      8),
+('2021-01-03', 45,      19),
+('2021-01-04', 43,      76),
+('2021-01-05', 71,      26),
+('2021-01-06', 0,       11),
+('2021-01-07', 39,      10),
+('2021-01-08', 32,      13),
+('2021-01-09', 68,      5),
+('2021-01-10', 49,      33),
+('2021-01-11', 55,      85),
+('2021-01-12', 27,      42),
+('2021-01-13', 88,      88),
+('2021-01-14', 44,      86),
+('2021-01-15', 83,      63),
+('2021-01-16', 54,      9),
+('2021-01-17', 15,      96),
+('2021-01-18', 66,      85),
+('2021-01-19', 22,      74),
+('2021-01-20', 54,      35),
+('2021-01-21', 61,      54),
+('2021-01-22', 3,       23),
+('2021-01-23', 54,      100),
+('2021-01-24', 46,      43),
+('2021-01-25', 97,      36),
+('2021-01-26', 62,      57),
+('2021-01-27', 45,      13),
+('2021-01-28', 40,      44),
+('2021-01-29', 58,      38),
+('2021-01-30', 62,      56),
+('2021-01-31', 60,      95)
 ;
