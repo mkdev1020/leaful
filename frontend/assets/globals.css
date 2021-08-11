@@ -69,4 +69,24 @@
   --col-del-link : #10D2FF;
   --grade-level-btn : #C3CDDD;
   --grade-level-btn-selected : #10D2FF;
+
+  --col-qualify-checkbox-text : #7E7E7E;
+
+  --upload-btn-color : #C3CDDD;
+  --upload-btn-border-color : #E9EFF4;
+  --col-filename-text : #C3CDDD;
+  --col-status-text : #10D2FF;
+
+  --del-file-btn-background : #10D2FF;
+  --del-file-btn-color : white;
+
+  --arrow-btn : #10D2FF;
+  --arrow-btn-disabled : #C3CDDD;
+
+  --col-coverImage-item-color : black;
+  --col-coverImage-item-hover : #51FFCF;
+
+  --col-title-inactive-color : #F99A00;
+  --col-title-active-color : #00E68E;
+  --col-title-delete-color : #10D2FF;
 }
