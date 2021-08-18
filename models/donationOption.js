@@ -4,55 +4,71 @@ const { DateTime } = require('luxon');
 module.exports = (sequelize) => {
   const DonationOption = require(__dirname + '/definitions/donations_options')(sequelize);
   const User           = require(__dirname + '/definitions/users')(sequelize);
+  const UserDonationOption = require(__dirname + '/userDonationOption')(sequelize);
 
-  DonationOption.procureForUser = async function(user) {
-    if (user.donations_options_id) {
-      return await DonationOption.findByPk(user.donations_options_id);
+  DonationOption.procureForUser = async function(user, placement) {
+    const userDonationOption = await UserDonationOption.findForUser(user, placement);
+
+    if (userDonationOption?.donations_options_id) {
+      return await DonationOption.findByPk(userDonationOption.donations_options_id);
     }
 
-    const option = await DonationOption.getRandom();
-    await User.update(
-      { donations_options_id: option.id },
-      { where: { id: user.id } }
-    );
+    const option = await DonationOption.getRandom(placement);
+
+    await UserDonationOption.create({
+      users_id: user.id,
+      donations_options_id: option.id,
+    });
+
     return option;
   };
 
-  DonationOption.procureTierForUser = async function(user) {
-    const option = await DonationOption.procureForUser(user);
-    const tierData = option.getTierDataForNumPrompts(user.num_donation_option_prompts);
+  DonationOption.procureTierForUser = async function(user, placement) {
+    const option = await DonationOption.procureForUser(user, placement);
+    const tierData = option.getTierDataForNumPrompts(0);
     return tierData;
   };
 
-  DonationOption.getPromptForUser = async function(user) {
-    const tierData = await DonationOption.procureTierForUser(user);
+  DonationOption.getPromptForUser = async function(user, placement) {
+    const option = await DonationOption.procureForUser(user, placement);
+    const tierData = option.getTierDataForNumPrompts(0);
 
-    if (user.last_donation_prompt) {
-      const lastPrompt = DateTime.fromJSDate(user.last_donation_prompt).toUTC();
+    const optionStats = await option.getStatsForUser(user);
+
+    if (optionStats.last_donation_prompt) {
+      const lastPrompt = DateTime.fromJSDate(optionStats.last_donation_prompt).toUTC();
       const hoursSinceLastPrompt = DateTime.now().toUTC().diff(lastPrompt).as('hours');
       if (hoursSinceLastPrompt < 24) {
         return tierData;
       }
     }
 
-    await User.update(
-      {
-        num_donation_option_prompts : user.num_donation_option_prompts + 1,
-        num_donation_prompts_total  : user.num_donation_prompts_total  + 1,
-        last_donation_prompt        : DateTime.now().toUTC().toISO(),
-      },
-      { where: { id: user.id } }
-    );
+    await optionStats.markPrompt();
 
     return tierData;
   };
 
-  DonationOption.getRandom = async function() {
-    return await DonationOption.findOne({ order: sequelize.literal('rand()'), limit: 1 });
+  DonationOption.prototype.getStatsForUser = async function(user) {
+    return await UserDonationOption.findOne({
+      where: {
+        users_id: user.id,
+        donations_options_id: this.id,
+      },
+    });
   };
 
-  DonationOption.getStatsByVariation = async function() {
-    const options = await DonationOption.findAll({ where: {} });
+  DonationOption.getRandom = async function(placement) {
+    return await DonationOption.findOne({
+      where: {
+        placement,
+      },
+      order: sequelize.literal('rand()'),
+      limit: 1,
+    });
+  };
+
+  DonationOption.getStatsByVariation = async function(placement) {
+    const options = await DonationOption.findAll({ where: { placement } });
     const stats = await Promise.all(options.map(async (option) => {
       return {
         id: option.id,
@@ -62,44 +78,15 @@ module.exports = (sequelize) => {
     return stats;
   };
 
-  DonationOption.clearAll = async function() {
-    // set all users to default option
-    await sequelize.query(
-      `
-      UPDATE \`users\` u
-      JOIN \`donations_options\` o ON o.is_default = 1
-      SET
-        u.donations_options_id = o.id,
-        u.num_donation_option_prompts = 0
-      `
-    );
-
-    // delete all other options
-    await DonationOption.destroy({ where: { is_default: false } });
-
-    // reset date for default option
-    await sequelize.query(
-      `
-      UPDATE \`donations_options\` o
-      SET o.started_at = :startedAt
-      WHERE o.is_default = 1
-      `,
-      {
-        replacements: {
-          startedAt: DateTime.now().toUTC().toFormat('yyyy-MM-dd HH:mm:ss'),
-        },
-      }
-    );
-  };
-
   DonationOption.prototype.getTotalUsersOptedIn = async function() {
     const usersOptedIn = await sequelize.query(
       `
         SELECT IFNULL(COUNT(*), 0) AS 'total'
-        FROM \`users\`
+        FROM \`users_donations_options\` udo
+        JOIN \`users\` u ON u.id = udo.users_id
         WHERE
-          \`role\` <> 'admin'
-          AND \`donations_options_id\` = :id
+          u.role <> 'admin'
+          AND udo.donations_options_id = :id
       `,
       {
         type: sequelize.QueryTypes.SELECT,
@@ -119,7 +106,7 @@ module.exports = (sequelize) => {
         FROM \`users\`
         WHERE
           \`role\` <> 'admin'
-          AND \`donations_options_id\` = :id
+          AND \`donated_options_id\` = :id
           AND \`donation_date\` >= :startedAt
       `,
       {
@@ -141,7 +128,7 @@ module.exports = (sequelize) => {
       FROM \`users_transactions\` t
       JOIN \`users\` u ON t.users_id = u.id
       WHERE
-        u.donations_options_id = :optionId
+        u.donated_options_id = :optionId
         AND u.role <> 'admin'
         AND u.donation_date >= :optionStartedAt
         AND t.type = 'donation'
@@ -191,6 +178,11 @@ module.exports = (sequelize) => {
       }
     }
     return null;
+  };
+
+  DonationOption.prototype.reset = async function() {
+    this.started_at = DateTime.now().toUTC().toJSDate();
+    await this.save();
   };
 
   return DonationOption;

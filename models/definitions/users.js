@@ -68,46 +68,6 @@ module.exports = sequelize => {
       comment: null,
       field: "is_zombie"
     },
-    donations_options_id: {
-      type: DataTypes.INTEGER(11),
-      allowNull: true,
-      defaultValue: null,
-      primaryKey: false,
-      autoIncrement: false,
-      comment: null,
-      field: "donations_options_id",
-      references: {
-        key: "id",
-        model: "donations_options_model"
-      }
-    },
-    num_donation_option_prompts: {
-      type: DataTypes.INTEGER(11),
-      allowNull: true,
-      defaultValue: null,
-      primaryKey: false,
-      autoIncrement: false,
-      comment: null,
-      field: "num_donation_option_prompts"
-    },
-    num_donation_prompts_total: {
-      type: DataTypes.INTEGER(11),
-      allowNull: true,
-      defaultValue: null,
-      primaryKey: false,
-      autoIncrement: false,
-      comment: null,
-      field: "num_donation_prompts_total"
-    },
-    last_donation_prompt: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      defaultValue: null,
-      primaryKey: false,
-      autoIncrement: false,
-      comment: null,
-      field: "last_donation_prompt"
-    },
     donation_date: {
       type: DataTypes.DATE,
       allowNull: true,
@@ -116,6 +76,19 @@ module.exports = sequelize => {
       autoIncrement: false,
       comment: null,
       field: "donation_date"
+    },
+    donated_options_id: {
+      type: DataTypes.INTEGER(11),
+      allowNull: true,
+      defaultValue: null,
+      primaryKey: false,
+      autoIncrement: false,
+      comment: null,
+      field: "donated_options_id",
+      references: {
+        key: "id",
+        model: "donations_options_model"
+      }
     },
     alias_first_name: {
       type: DataTypes.STRING(45),
@@ -298,7 +271,7 @@ module.exports = sequelize => {
       name: "fk_users_donations_options1_idx",
       unique: false,
       type: "BTREE",
-      fields: ["donations_options_id"]
+      fields: ["donated_options_id"]
     }]
   };
   const UsersModel = sequelize.define("users_model", attributes, options);

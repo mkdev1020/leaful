@@ -82,7 +82,7 @@ export default {
     async loadInquiries() {
       const response = await this.$sdk.get('/help/inquiries');
       const responseJson = await response.json();
-
+      console.log(responseJson)
       this.$store.commit('exceptions/cacheUsers', responseJson.users);
       this.$store.commit('exceptions/set', {
         supportThreads: responseJson.threads,
@@ -92,7 +92,6 @@ export default {
     async loadPayouts() {
       const response = await this.$sdk.get('/payouts/pending');
       const responseJson = await response.json();
-
       this.$store.commit('exceptions/cacheUsers', responseJson.users);
       this.$store.commit('exceptions/set', {
         payouts: responseJson.payouts,
@@ -172,3 +171,14 @@ export default {
 };
 
 </script>
+
+<style>
+.exception_divider {
+  min-width: 2px;
+  max-width: 2px;
+  width: 2px;
+  margin: 0 18px;
+  height: 115px;
+  background: var(--col-captcha-verify-border-disabled);
+}
+</style>

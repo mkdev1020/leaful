@@ -2,13 +2,23 @@
 USE `teachagogo_dev`;
 
 INSERT INTO `users`
-(`id`, `role`, `email`, `first_name`, `last_name`, `password_hash`, `donations_options_id`, `username`, `avatar_locator`)
+(`id`, `role`, `email`, `first_name`, `last_name`, `password_hash`, `username`, `avatar_locator`, `donation_date`, `donated_options_id`)
 VALUES
-(2, 'teacher', 'jknotek@fossil.icu'      , 'Jake', 'Knotek', '$2b$10$ODGrLGXfU.Lg6oMIXq8Qu.R6injZbo2zWtBOb65FpwirD8YmhyjK.', 1, 'jknotek2', '/api/images/letters/J/j2.svg'),
-(3, 'admin'  , 'jknotek+admin@fossil.icu', 'Jake', 'Knotek', '$2b$10$ODGrLGXfU.Lg6oMIXq8Qu.R6injZbo2zWtBOb65FpwirD8YmhyjK.', 1, 'jknotek3', '/api/images/letters/J/j3.svg'),
-(4, 'teacher', 'jknotek+4@fossil.icu'    , 'Jake', 'Knotek', '$2b$10$ODGrLGXfU.Lg6oMIXq8Qu.R6injZbo2zWtBOb65FpwirD8YmhyjK.', 1, 'jknotek4', '/api/images/letters/J/j4.svg'),
-(5, 'teacher', 'jknotek+5@fossil.icu'    , 'Jake', 'Knotek', '$2b$10$ODGrLGXfU.Lg6oMIXq8Qu.R6injZbo2zWtBOb65FpwirD8YmhyjK.', 1, 'jknotek5', '/api/images/letters/J/j5.svg'),
-(6, 'teacher', 'jknotek+6@fossil.icu'    , 'Jake', 'Knotek', '$2b$10$ODGrLGXfU.Lg6oMIXq8Qu.R6injZbo2zWtBOb65FpwirD8YmhyjK.', 1, 'jknotek6', '/api/images/letters/J/j6.svg')
+(2, 'teacher', 'jknotek@fossil.icu'      , 'Jake', 'Knotek', '$2b$10$ODGrLGXfU.Lg6oMIXq8Qu.R6injZbo2zWtBOb65FpwirD8YmhyjK.', 'jknotek2', '/api/images/letters/J/j2.svg', NULL, NULL),
+(3, 'admin'  , 'jknotek+admin@fossil.icu', 'Jake', 'Knotek', '$2b$10$ODGrLGXfU.Lg6oMIXq8Qu.R6injZbo2zWtBOb65FpwirD8YmhyjK.', 'jknotek3', '/api/images/letters/J/j3.svg', NULL, NULL),
+(4, 'teacher', 'jknotek+4@fossil.icu'    , 'Jake', 'Knotek', '$2b$10$ODGrLGXfU.Lg6oMIXq8Qu.R6injZbo2zWtBOb65FpwirD8YmhyjK.', 'jknotek4', '/api/images/letters/J/j4.svg', CURRENT_TIMESTAMP, 1),
+(5, 'teacher', 'jknotek+5@fossil.icu'    , 'Jake', 'Knotek', '$2b$10$ODGrLGXfU.Lg6oMIXq8Qu.R6injZbo2zWtBOb65FpwirD8YmhyjK.', 'jknotek5', '/api/images/letters/J/j5.svg', CURRENT_TIMESTAMP, 2),
+(6, 'teacher', 'jknotek+6@fossil.icu'    , 'Jake', 'Knotek', '$2b$10$ODGrLGXfU.Lg6oMIXq8Qu.R6injZbo2zWtBOb65FpwirD8YmhyjK.', 'jknotek6', '/api/images/letters/J/j6.svg', NULL, NULL)
+;
+
+INSERT INTO `users_donations_options`
+(`donations_options_id`, `users_id`)
+VALUES
+(1, 2),
+(1, 3),
+(1, 4),
+(2, 5),
+(2, 6)
 ;
 
 INSERT INTO `users_transactions`
@@ -18,7 +28,12 @@ VALUES
 (4, 1, 'payout'       , 4000, 'awaiting_approval', '2234', '2021-01-01 01:01:01'),
 (5, 1, 'revenue_share', 5000, 'completed'        , '3234', '2021-01-01 01:01:01'),
 (5, 1, 'payout'       , 5000, 'awaiting_approval', '4234', '2021-01-01 01:01:01'),
-(6, 1, 'revenue_share', 6000, 'completed'        , '5234', '2021-01-01 01:01:01')
+(6, 1, 'revenue_share', 6000, 'completed'        , '5234', '2021-01-01 01:01:01'),
+
+(4, 1, 'donation',     -4000, 'completed'        , 'f123', CURRENT_TIMESTAMP),
+(5, 1, 'donation',     -5000, 'completed'        , 'f124', CURRENT_TIMESTAMP),
+(1, 4, 'donation',      4000, 'completed'        , 'f123', CURRENT_TIMESTAMP),
+(1, 5, 'donation',      5000, 'completed'        , 'f124', CURRENT_TIMESTAMP)
 ;
 
 INSERT INTO `email_proxy_threads`

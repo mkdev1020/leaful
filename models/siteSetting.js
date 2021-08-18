@@ -23,5 +23,11 @@ module.exports = (sequelize) => {
     });
   };
 
+  SiteSetting.getGlobalRevenueShare = async function() {
+    let revenueShare = await this.getValueByName('global_revenue_share');
+    revenueShare = revenueShare / 100;
+    return revenueShare;
+  };
+
   return SiteSetting;
 }

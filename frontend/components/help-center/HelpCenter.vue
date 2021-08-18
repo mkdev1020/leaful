@@ -31,7 +31,7 @@
         </div>
 
         <div class="help-center-list-items" v-else>
-          <div :class="['help-center-list-item']" @click="addNewItem()" v-if="!showAddNew">
+          <div :class="['help-center-list-item']" @click="addNewItem()" v-if="!showAddNew && isAdmin">
             <span class="help-center-list-add-new">[ +New ]</span>
           </div>
           <template v-for="(item, index) in items">
@@ -181,7 +181,7 @@
 
               <template v-if="itemEdit.image">
                 <div class="image-locator">
-                  <span>{{itemEdit.image}}</span>
+                  <span>{{ imageEdited ? newItem.image_locator : itemEdit.image }}</span>
                   <div>
                     <button class="delete-image" @click="discardImage()"></button>
                   </div>
@@ -189,7 +189,7 @@
               </template>
 
               <template v-else>
-                <input type="file" name="image" id="image-edit-btn" hidden>
+                <input type="file" name="image" id="image-edit-btn" accept="image/*" ref="imageInput" hidden @change="onFileChange()">
                 <label for="image-edit-btn" class="add-new-image"><span>+ Image</span></label>
               </template>
 
@@ -206,6 +206,13 @@
             </template>
             <template v-else>
               <span class="delete-button" @click="showConfirmBeforeDelete()">Delete</span>
+              <button
+                type="button"
+                class="submit input"
+                @click="changeTosUpdate"
+              >
+                <i id="icon-check" :class="['icon-check', itemEdit.tos_updated_at ? 'checked' : 'not-checked']" />
+              </button>
               <button class="save-button" :disabled="!submitEnabled" @click="updateItem()">Save</button>
             </template>
           </div>
@@ -265,14 +272,36 @@
             <template v-else>
 
               <template v-if="!showItemEdit">
-                <div class="topic-title">
-                  {{items[itemSelected - 1]['long_title']}}
-                  <span class="help-center-item-edit" v-if="isAdmin" @click="showEditItem()">[Edit]</span>
-                </div>
+                <template v-if="items[itemSelected - 1]['tos_updated_at']">
+                  <div class="topic-title">
+                    Updated Terms of Service
+                  </div>
 
-                <div class="topic-description">
-                  {{items[itemSelected - 1]['body']}}
-                </div>
+                  <div class="topic-description">
+                    Since your last login, Learingfuls's Terms of Service have been updated, with revision made to the sections highlighted to your left. Please take the time to carefully review these changes, and then agree to them by clicking or tapping the button below.
+                  </div>
+
+                  <div class="tos-update">
+                    <button class="agree-btn" @click="agreeTos()">I Agree</button>
+
+                    <span class="agree-tos">
+                       &nbsp; to Learningful's Updated Terms of Condition.
+                    </span>
+                  </div>
+
+                </template>
+
+                <template v-else>
+                  <div class="topic-title">
+                    {{items[itemSelected - 1]['long_title']}}
+                    <span class="help-center-item-edit" v-if="isAdmin" @click="showEditItem()">[Edit]</span>
+                  </div>
+
+                  <div class="topic-description">
+                    {{items[itemSelected - 1]['body']}}
+                  </div>
+                </template>
+
               </template>
 
             </template>
@@ -346,6 +375,7 @@ export default {
       showAddNew: false,
       showItemEdit: false,
       showAskItSubmit: false,
+      imageEdited: false,
       newItem: {
         id: null,
         short_title: '',
@@ -354,7 +384,8 @@ export default {
         image: '',
         image_locator: '',
         accent_color: '',
-        order_index: null
+        order_index: null,
+        update: false,
       },
       editItem: this.itemEdit,
       showDeleteConfirm: false,
@@ -403,8 +434,10 @@ export default {
           long_title: selectedItem.long_title,
           body: selectedItem.body,
           image: image,
+          image_locator: selectedItem.image_locator,
           order_index: selectedItem.order_index,
-          accent_color: selectedItem.accent_color
+          accent_color: selectedItem.accent_color,
+          tos_updated_at: selectedItem.tos_updated_at ? selectedItem.tos_updated_at : false,
         }
         this.newItem = item
         return item
@@ -414,8 +447,10 @@ export default {
         this.newItem.long_title = val.long_title
         this.newItem.body = val.body
         this.newItem.image = val.image
+        this.newItem.image_locator = val.image_locator
         this.newItem.order_index = val.order_index
         this.newItem.accent_color = val.accent_color
+        this.newItem.tos_updated_at = val.tos_updated_at
       }
     },
     submitEnabled() {
@@ -461,11 +496,14 @@ export default {
     },
 
     addNewItem() {
+      this.resetItem()
       this.showAddNew = true
+      this.showItemEdit = false
       this.itemSelected = 0
     },
     showEditItem() {
       this.showItemEdit = true
+      this.showAddNew = false
     },
     discardAddNew() {
       this.showAskItSubmit = false
@@ -492,6 +530,7 @@ export default {
       const reader = new FileReader()
       reader.readAsDataURL(file)
       reader.onload = e => {
+        this.imageEdited = true
         this.newItem.image = e.target.result
         this.newItem.image_locator = file.name
       }
@@ -516,10 +555,23 @@ export default {
       this.itemSelected = 1
     },
     async updateItem() {
-      console.log(this.newItem)
-      let item = this.newItem
+      let item = Object.assign({}, {...this.newItem})
       item.index = this.itemSelected - 1
+      item.imageEdited = this.imageEdited
+
       await this.$store.dispatch('help-center/updateItem', item)
+      this.imageEdited = false
+    },
+
+    async agreeTos() {
+      let item = Object.assign({}, {...this.items[this.itemSelected - 1]})
+      item.index = this.itemSelected - 1
+      item.tos_updated_at = false
+      item.imageEdited = false
+
+
+      await this.$store.dispatch('help-center/updateItem', item)
+      this.imageEdited = false
     },
 
     async deleteItem() {
@@ -527,11 +579,29 @@ export default {
       console.log(selectedItem)
       selectedItem.index = this.itemSelected - 1
       await this.$store.dispatch('help-center/deleteItem', selectedItem)
+      this.itemSelected = this.itemSelected - 1
+      this.showItemEdit = false
     },
     async submitFeedback() {
       await this.$store.dispatch('help-center/submitFeedback', this.feedback)
       this.showAskItSubmit = true
       this.feedback = ''
+    },
+    resetItem() {
+      this.newItem = Object.assign({}, {
+        id: null,
+        short_title: '',
+        long_title: '',
+        body: '',
+        image: '',
+        image_locator: '',
+        accent_color: '',
+        order_index: null,
+        tos_updated_at: false
+      })
+    },
+    changeTosUpdate() {
+      this.newItem.tos_updated_at = !this.newItem.tos_updated_at;
     }
   },
 
@@ -690,6 +760,16 @@ export default {
   margin-top: -40px;
 }
 
+.tos-update {
+  display: flex;
+  align-items: center;
+}
+
+.agree-tos {
+  font-family: 'Nunito', sans-serif;
+  color: var(--col-help-center-list-item);
+}
+
 .feedback-form-area {
   height: 194px;
   width: 582px;
@@ -735,6 +815,19 @@ export default {
   font-family: 'Nunito', sans-serif;
   font-weight: 600;
   font-size: 16px;
+}
+
+.agree-btn {
+  height: 30px;
+  width: 70px;
+  border-radius: 5px;
+  border: none;
+  background: var(--col-help-center-list-item);
+  color: #ffffff;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
 }
 
 .submit-button:disabled {
@@ -959,4 +1052,47 @@ export default {
 .input-error {
   border: 4px solid red !important;
 }
+
+.submit {
+  grid-column: 5 / 6;
+  grid-row: 4;
+  padding: 0;
+  background: white;
+  border-color: var(--col-accent);
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.submit[disabled] {
+  background: var(--col-border);
+  border-color: var(--col-border);
+  color: white;
+}
+
+.input {
+  border: 4px solid var(--col-border);
+  border-radius: 5px;
+  font-size: 16px;
+  font-family: "Nunito", sans-serif;
+  font-weight: 600;
+  padding: 0 15px;
+  color: var(--col-accent);
+}
+
+.input::placeholder {
+  color: var(--col-input-placeholder);
+}
+
+.input[disabled] {
+  background: var(--col-disabled);
+}
+
+.checked:before {
+  color: #000000;
+}
+
+.not-checked:before {
+  color: #ffffff;
+}
+
 </style>

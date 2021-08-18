@@ -107,11 +107,13 @@ async function simulateDownload(user) {
 // https://www.teachagogo.com/specs/admin_controls_pricing.htm
 test(`pricing split testing`, async () => {
   const downloaderUser1 = await utilities.createTestUser();
-  expect(downloaderUser1.donations_options_id).toBe(null);
+  // expect(downloaderUser1.donations_options_id).toBe(null);
+  let donationStats = await models.UserDonationOption.findForUser(downloaderUser1, 'prompt');
+  expect(donationStats).toBe(null);
 
   await simulateDownload(downloaderUser1);
 
-  let prompt = await downloaderUser1.getApplicableDonationPrompt();
+  let prompt = await downloaderUser1.getApplicableDonationPrompt('prompt');
   expect(prompt).toBe(null);
 
   await simulateDownload(downloaderUser1);
@@ -119,50 +121,61 @@ test(`pricing split testing`, async () => {
   await simulateDownload(downloaderUser1);
   await simulateDownload(downloaderUser1);
 
-  prompt = await downloaderUser1.getApplicableDonationPrompt();
+  prompt = await downloaderUser1.getApplicableDonationPrompt('prompt');
   expect(prompt).not.toBe(null);
   expect(prompt[0]).toEqual(24);
 
   await downloaderUser1.reload();
   // should no longer be undefined
-  expect(downloaderUser1.donations_options_id).not.toBe(null);
-  expect(downloaderUser1.num_donation_option_prompts).toBe(1);
+  // expect(downloaderUser1.donations_options_id).not.toBe(null);
+  // expect(downloaderUser1.num_donation_option_prompts).toBe(1);
+
+  donationStats = await models.UserDonationOption.findForUser(downloaderUser1, 'prompt');
+  expect(donationStats).not.toBe(null);
+  expect(donationStats.num_donation_option_prompts).toBe(1);
 
   //
   // make sure that the same prompt isn't counted more than once in a 24 hour
   // period
   //
-  prompt = await downloaderUser1.getApplicableDonationPrompt();
+  prompt = await downloaderUser1.getApplicableDonationPrompt('prompt');
   await downloaderUser1.reload();
 
   // should still be 1
-  expect(downloaderUser1.num_donation_option_prompts).toBe(1);
+  donationStats = await models.UserDonationOption.findForUser(downloaderUser1, 'prompt');
+  expect(donationStats.num_donation_option_prompts).toBe(1);
 
-  await models.User.update(
+  // await models.User.update(
+  //   { last_donation_prompt: DateTime.now().toUTC().minus({ hours: 25 }).toISO() },
+  //   { where: { id: downloaderUser1.id } }
+  // );
+
+  await models.UserDonationOption.update(
     { last_donation_prompt: DateTime.now().toUTC().minus({ hours: 25 }).toISO() },
-    { where: { id: downloaderUser1.id } }
+    { where: { id: donationStats.id } }
   );
+
   await downloaderUser1.reload();
-  prompt = await downloaderUser1.getApplicableDonationPrompt();
+  prompt = await downloaderUser1.getApplicableDonationPrompt('prompt');
   await downloaderUser1.reload();
 
   // now should have been incremented
-  expect(downloaderUser1.num_donation_option_prompts).toBe(2);
+  donationStats = await models.UserDonationOption.findForUser(downloaderUser1, 'prompt');
+  expect(donationStats.num_donation_option_prompts).toBe(2);
 
-  //
-  // user should receive new option after the correct amount of downloads
-  //
-  await models.User.update({ num_donation_option_prompts: 3 }, { where: { id: downloaderUser1.id } });
-  await downloaderUser1.reload();
-  prompt = await downloaderUser1.getApplicableDonationPrompt();
-  // should be the next tier down
-  expect(prompt[0]).toEqual(12);
-
-  await models.User.update({ num_donation_option_prompts: 5 }, { where: { id: downloaderUser1.id } });
-  await downloaderUser1.reload();
-  prompt = await downloaderUser1.getApplicableDonationPrompt();
-  // should be the next tier down
-  expect(prompt[0]).toEqual(6);
+  // //
+  // // user should receive new option after the correct amount of downloads
+  // //
+  // await models.User.update({ num_donation_option_prompts: 3 }, { where: { id: downloaderUser1.id } });
+  // await downloaderUser1.reload();
+  // prompt = await downloaderUser1.getApplicableDonationPrompt('prompt');
+  // // should be the next tier down
+  // expect(prompt[0]).toEqual(12);
+  // await models.User.update({ num_donation_option_prompts: 5 }, { where: { id: downloaderUser1.id } });
+  // await downloaderUser1.reload();
+  // prompt = await downloaderUser1.getApplicableDonationPrompt('prompt');
+  // // should be the next tier down
+  // expect(prompt[0]).toEqual(6);
 });
 
 test(`pricing split testing stats`, async () => {
@@ -175,34 +188,43 @@ test(`pricing split testing stats`, async () => {
     utilities.createTestUser(),
   ]);
 
-  await models.DonationOption.create({ tier_1: [33, 66, 99] });
-  await models.DonationOption.create({ tier_1: [99, 999, 9999] });
-  await models.DonationOption.create({ tier_1: [1, 2, 3] });
+  await models.DonationOption.create({ placement: 'prompt', tier_1: [33, 66, 99] });
+  await models.DonationOption.create({ placement: 'prompt', tier_1: [99, 999, 9999] });
+  await models.DonationOption.create({ placement: 'prompt', tier_1: [1, 2, 3] });
 
-  const options = await models.DonationOption.findAll({ where: {} });
+  const sidebarOption = await models.DonationOption.create({ placement: 'sidebar', tier_1: [10, 20, 30] });
 
-  await models.User.update( { donations_options_id: options[0].id }, { where: { id: downloaderUsers[0].id } });
-  await models.User.update( { donations_options_id: options[1].id }, { where: { id: downloaderUsers[1].id } });
-  await models.User.update( { donations_options_id: options[1].id }, { where: { id: downloaderUsers[2].id } });
-  await models.User.update( { donations_options_id: options[1].id }, { where: { id: downloaderUsers[3].id } });
-  await models.User.update( { donations_options_id: options[2].id }, { where: { id: downloaderUsers[4].id } });
-  await models.User.update( { donations_options_id: options[2].id }, { where: { id: downloaderUsers[5].id } });
+  const options = await models.DonationOption.findAll({ where: { placement: 'prompt' } });
+
+  // await models.User.update( { donations_options_id: options[0].id }, { where: { id: downloaderUsers[0].id } });
+  // await models.User.update( { donations_options_id: options[1].id }, { where: { id: downloaderUsers[1].id } });
+  // await models.User.update( { donations_options_id: options[1].id }, { where: { id: downloaderUsers[2].id } });
+  // await models.User.update( { donations_options_id: options[1].id }, { where: { id: downloaderUsers[3].id } });
+  // await models.User.update( { donations_options_id: options[2].id }, { where: { id: downloaderUsers[4].id } });
+  // await models.User.update( { donations_options_id: options[2].id }, { where: { id: downloaderUsers[5].id } });
+
+  await models.UserDonationOption.create( { donations_options_id: options[0].id, users_id: downloaderUsers[0].id });
+  await models.UserDonationOption.create( { donations_options_id: options[1].id, users_id: downloaderUsers[1].id });
+  await models.UserDonationOption.create( { donations_options_id: options[1].id, users_id: downloaderUsers[2].id });
+  await models.UserDonationOption.create( { donations_options_id: options[1].id, users_id: downloaderUsers[3].id });
+  await models.UserDonationOption.create( { donations_options_id: options[2].id, users_id: downloaderUsers[4].id });
+  await models.UserDonationOption.create( { donations_options_id: options[2].id, users_id: downloaderUsers[5].id });
 
   await Promise.all(downloaderUsers.map(user => user.reload()));
 
   // option 1
-  await downloaderUsers[0].donate(33);
+  await downloaderUsers[0].donate(33, 'prompt');
 
   // option 2
-  await downloaderUsers[1].donate(99);
-  await downloaderUsers[2].donate(999);
+  await downloaderUsers[1].donate(99, 'prompt');
+  await downloaderUsers[2].donate(999, 'prompt');
 
   // option 3: has users, but no conversions
 
   // option 4: no users assigned
 
   // verify that users opted in is correct
-  let stats = await models.DonationOption.getStatsByVariation();
+  let stats = await models.DonationOption.getStatsByVariation('prompt');
   expect(stats.length).toBe(4);
 
   expect(stats[0].stats.usersOptedIn).toBe(1);
@@ -225,10 +247,38 @@ test(`pricing split testing stats`, async () => {
     setTimeout(resolve, 1500);
   });
 
+  //
+  // make sure stats for other placements are different
+  //
+  stats = await models.DonationOption.getStatsByVariation('sidebar');
+  expect(stats[0].stats.usersOptedIn).toBe(0);
+  const newUser = await utilities.createTestUser();
+  await models.UserDonationOption.create( { donations_options_id: sidebarOption.id, users_id: newUser.id });
+
+  stats = await models.DonationOption.getStatsByVariation('sidebar');
+  expect(stats[0].stats.usersOptedIn).toBe(1);
+
+  //
+  // test deletion
+  //
+
+  let allUsersDonationOptions = await models.UserDonationOption.findAll();
+  expect(allUsersDonationOptions.length).toBe(7);
+
+  await options[1].destroy();
+  await options[2].destroy();
+  await options[3].destroy();
+  await sidebarOption.destroy();
+  stats = await models.DonationOption.getStatsByVariation('prompt');
+  expect(stats.length).toBe(1);
+  allUsersDonationOptions = await models.UserDonationOption.findAll();
+  expect(allUsersDonationOptions.length).toBe(1);
+
+  /*
   // stopping a split test should clear all data, and return users to the
   // default option
   await models.DonationOption.clearAll();
-  stats = await models.DonationOption.getStatsByVariation();
+  stats = await models.DonationOption.getStatsByVariation('prompt');
   expect(stats[0].stats.usersOptedIn).toBe(6);
   // donations made to a deleted campaign is no longer counted (even if they
   // donated to the default option which technically still exists)
@@ -237,20 +287,21 @@ test(`pricing split testing stats`, async () => {
 
   // verify that user can't tip outside their currently assigned "bracket"
   await downloaderUsers[0].reload();
-  let tier = await models.DonationOption.procureTierForUser(downloaderUsers[0]);
+  let tier = await models.DonationOption.procureTierForUser(downloaderUsers[0], 'prompt');
   // this is the lowest amount the user can pay at this time
   expect(tier[0]).toBe(24);
 
   // should throw error
   try {
-    await downloaderUsers[0].donate(6);
+    await downloaderUsers[0].donate(6, 'prompt');
     fail(`Users shouldn't be able to donate less than their bracket allows.`);
   } catch (e) {
     expect(e).toBeTruthy();
   }
 
   // should succeed
-  await downloaderUsers[0].donate(24);
+  await downloaderUsers[0].donate(24, 'prompt');
+  */
 
 });
 

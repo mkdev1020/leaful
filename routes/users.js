@@ -57,6 +57,44 @@ router
 );
 
 router
+.put(
+  '/:id/avatar',
+
+  guardAccessToken,
+
+  async (ctx) => {
+    let userId = ctx.request.params.id;
+    if (userId === 'self') {
+      userId = ctx.accessTokenDecoded.sub;
+    }
+
+    // TODO TODO TODO guard admin if not 'self'
+
+    const image = ctx.request.files.image;
+    if (!image) {
+      ctx.status = 400;
+      ctx.body = {
+        message: `No file uploaded!`,
+      };
+      return;
+    }
+    ctx.status = 200;
+
+    // console.log("IMAGE:", image);
+
+    let user = await models.User.findByPk(userId);
+    await user.setAvatar(image);
+
+    await user.reload();
+
+    ctx.status = 200;
+    ctx.body = {
+      avatarLocator: user.avatar_locator,
+    };
+  },
+);
+
+router
 .get(
   '/',
 

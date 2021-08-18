@@ -159,7 +159,8 @@ router
 
   async (ctx, next) => {
     const user = ctx.user;
-
+    console.log("user", user)
+    console.log(user.id);
     const doesMatch = user.doesPasswordMatch(ctx.request.body.password);
     if (!doesMatch) {
       ctx.status = 403;
@@ -177,7 +178,8 @@ router
 
     ctx.body = {
       accessToken,
-      refreshToken
+      refreshToken,
+      userdata : { userId : user.id}
     };
   }
 );

@@ -164,7 +164,7 @@
 
   /* XXX */
   /* margin-left: 190px; */
-  width: 1024px;
+  /*width: 1024px;*/
   height: 190px;
 }
 
@@ -329,7 +329,7 @@ export default {
     },
     fullName() {
       if (this.user.alias_first_name) {
-        return `${this.user.alias_first_name} ${this.alias_last_name}`;
+        return `${this.user.alias_first_name} ${this.user.alias_last_name}`;
       }
       return `${this.user.first_name} ${this.user.last_name}`;
     },

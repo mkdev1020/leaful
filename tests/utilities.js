@@ -18,6 +18,14 @@ module.exports.createTestUser = async function (overrides = {}) {
 module.exports.clearDatabase = async function() {
   clearTestInbox();
 
+  await models.SiteBalance.destroy({ where: {} });
+  // await models.SiteSetting.destroy({ where: {} });
+  await models.SiteStat.destroy({ where: {} });
+  await models.SupportThreadMessage.destroy({ where: {} });
+
+  await models.CaptchaChallenge.destroy({ where: {} });
+  await models.HelpCenterEntry.destroy({ where: {} });
+
   await models.AdvertisementRecord.destroy({ where: {} });
   await models.AdvertisementTargetGrade.destroy({ where: {} });
   await models.Advertisement.destroy({ where: {} });
@@ -34,6 +42,8 @@ module.exports.clearDatabase = async function() {
   await models.UserFavorite.destroy({ where: {} });
 
   await models.ResourceDownload.destroy({ where: {} });
+  await models.ResourceFile.destroy({ where: {} });
+  await models.ResourcePreview.destroy({ where: {} });
   await models.Resource.destroy({ where: {} });
   await models.Referral.destroy({ where: {} });
 
@@ -41,6 +51,11 @@ module.exports.clearDatabase = async function() {
   await models.DonationOption.destroy({ where: { is_default: 0 } });
 
   await models.TokenHeartbeat.destroy({ where: {} });
+  await models.UserPermission.destroy({ where: {} });
+  await models.UserLoginToken.destroy({ where: {} });
+  await models.UserIp.destroy({ where: {} });
+  await models.UserFollowing.destroy({ where: {} });
+  await models.UserDonationOption.destroy({ where: {} });
   await models.User2fa.destroy({ where: {} });
   await models.UserTransaction.destroy({ where: {} });
   await models.User.destroy({

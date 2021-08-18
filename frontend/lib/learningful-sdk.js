@@ -239,6 +239,7 @@ class Sdk {
     // this.accessToken = data.accessToken;
     await this.context.store.commit('main/parseJwt', data.accessToken);
     this.context.store.commit('main/setAccessToken', data.accessToken);
+    this.context.store.commit('main/setUser', data.userdata);
     this.context.store.commit('main/saveToLocalStorage');
   }
 

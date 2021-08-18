@@ -152,7 +152,7 @@ test(`site stats should be correct`, async () => {
     last_sign_in_date: new Date(),
   });
 
-  await downloaderUser.donate(321);
+  await downloaderUser.donate(321, 'prompt');
 
   const usersObjects = {
     teachagogoUser: await utilities.createTestUser(),
@@ -533,7 +533,7 @@ test(`download and revenue distribution is calculated properly`, async () => {
     downloaderUser.markDownload(teacherCResource1),
   ]);
 
-  await models.SiteSetting.set('global_revenue_share', 1);
+  await models.SiteSetting.set('global_revenue_share', 100);
 
   const downloadsByUser = await models.ResourceDownload.getTotalDownloadsByUser(DateTime.now().toUTC().toISO());
   expect(Math.round(downloadsByUser[teacherA.id].percentage * 100)).toEqual(50);

@@ -38,7 +38,7 @@ router
             contributorUsersIds.add(userId);
           }
 
-          const globalRevenueShare = await models.SiteSetting.getValueByName('global_revenue_share');
+          const globalRevenueShare = await models.SiteSetting.getGlobalRevenueShare();
           const revenueShare = await models.SiteBalance.calculateRevenueShare(date);
 
           const adRevenue = await models.Advertisement.calculateTotalSpendForDate(date);

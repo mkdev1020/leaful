@@ -1,6 +1,7 @@
 <template>
   <modal
     style="z-index: 100;"
+    close-button
     :class="{
       showing: showModal
     }"
@@ -10,35 +11,38 @@
     <div v-if="step === -1" class="upload-container">
       <div class="get-started-left-container">
         <div>
-            <div class="upload-title">Publish It</div>
-            <div class="upload-subtitle">
+          <div class="upload-title">Publish It</div>
+          <div class="upload-subtitle">
               <span>
                 <b>Learningful</b> invites all users to upload, publish, and earn income from,
                 the original teaching materials they've created. If you have something special
                  you think will help teachers, get started uploading your resource today!
               </span>
-            </div>
-            <button class="start-btn" @click="getStarted()">Get Started</button>
+          </div>
+          <button class="start-btn" @click="getStarted()">Get Started</button>
         </div>
       </div>
 
       <div class="get-started-right-container">
-          <img :src="starterImage" width="100%"/>
+        <img :src="starterImage" width="100%"/>
       </div>
     </div>
     <div v-else-if="step >= 0" class="upload-container">
       <div class="upload-left-container">
         <Precheck v-if="step === 0" />
         <Step v-else-if="(step > 0 && step < 12)"/>
+        <Status v-else-if="step === 12" />
+        <DelResource v-else />
       </div>
       <div class="upload-right-container">
-          <ul>
-            <li v-for="(item, index) in stepList"
-             :key="item"
-             :class="{ focus : (index+1) === step }">
-                {{item}}
-            </li>
-          </ul>
+        <ul>
+          <li v-for="(item, index) in stepList"
+              :key="item"
+              :class="{ focus : (index + 1) === step }">
+            <span>{{item}}</span>
+            <img v-if="(index + 1) === step" class="edit-icon" src="/icons/edit.svg"/>
+          </li>
+        </ul>
       </div>
     </div>
   </modal>
@@ -46,53 +50,28 @@
 
 <script>
 import { mapGetters } from "vuex";
-import { validationMixin } from "vuelidate";
-import { required, minLength, numeric, minValue } from "vuelidate/lib/validators";
 import starterImage from "../../assets/images/upload/start.png";
 
 import Modal from "../Modal";
 import Precheck from "./Precheck";
 import Step from "./Step";
+import Status from "./Status";
+import DelResource from "./DelResource";
+import { stepList } from '~/lib/consts'
 
 export default {
-  mixins: [validationMixin],
   components: {
     Modal,
     Precheck,
-    Step
+    Step,
+    Status,
+    DelResource
   },
-
   data() {
     return {
-        starterImage : starterImage,
-        stepList : [
-          "Title",
-          "Resource Type",
-          "Subject Area",
-          "Description",
-          "Grade",
-          "Skills",
-          "Standards",
-          "Reading Level",
-          "Keywords",
-          "Files",
-          "Images",
-          "Status"
-        ]
+      starterImage : starterImage,
+      stepList
     };
-  },
-
-  validations: {
-    // newItem: {
-    //   short_title: {
-    //     required,
-    //   },
-    //   order_index: {
-    //     required,
-    //     numeric,
-    //     minValue: 0,
-    //   },
-    // }
   },
   computed: {
     ...mapGetters({
@@ -100,10 +79,10 @@ export default {
       step : "upload/getUploadStep"
     }),
     feedbackTextCount() {
-      return this.textCount - this.feedback.length
+      // return this.textCount - this.feedback.length
     },
     isAdmin() {
-      return this.$store.state.main.isAdmin
+      return this.$store.state.main.requestLimit.isAdmin
     }
   },
   methods: {
@@ -111,17 +90,11 @@ export default {
       this.$store.commit("upload/SET_UPLOAD_MODAL", false);
     },
     getStarted(){
-        //.... logical part...
+      //.... logical part...
       this.$store.commit("upload/GOTO_NEXT_UPLOAD_STEP");
     }
   },
-
-  async mounted() {
-  },
-
-  watch: {
-  }
-};
+}
 </script>
 
 <style>
@@ -165,10 +138,18 @@ export default {
   padding : 5px;
   color : var(--col-upload-right-container-ul-li-color);
   border-radius : 3px;
+  display : flex;
+  align-items : center;
 }
 .upload-right-container ul li.focus {
   background : var(--col-upload-right-container-ul-li-focus-background);
   color : var(--col-upload-right-container-ul-li-focus-color);
+}
+.edit-icon {
+  width : 12px;
+  height : 12px;
+  margin-left : auto;
+  filter : invert(1);
 }
 .upload-title {
   font-size: 36px;
@@ -204,10 +185,10 @@ export default {
 
 /**common css**/
 .title {
-    font-family : 'Nunito', sans-serif;
-    font-weight : 900;
-    color : var(--col-title);
-    font-size : 20px;
+  font-family : 'Nunito', sans-serif;
+  font-weight : 900;
+  color : var(--col-title);
+  font-size : 20px;
 }
 .title span {
   color: var(--col-title-span);
@@ -223,7 +204,7 @@ export default {
   font-size : 16px;
   font-weight : 400;
   color : var(--col-control-div);
-  margin-top : 30px;
+  align-items: flex-end;
 }
 .next-step-btn {
   font-family: 'Nunito', sans-serif;

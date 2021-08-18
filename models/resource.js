@@ -227,6 +227,104 @@ module.exports = (sequelize) => {
     });
   };
 
+  Resource.prototype.activate = async function(fields = {}) {
+    const User = require(__dirname + '/user')(sequelize);
+
+    await this.update(Object.assign({},
+      {
+        approval_status: 'approved',
+        moderator_comment: null,
+      },
+      fields
+    ));
+    await this.reload();
+
+    const user = await User.findByPk(this.users_id);
+    await user.sendEmail('resource-activated', {
+      name: user.first_name,
+      resource: this,
+    });
+  };
+
+  Resource.prototype.deactivate = async function(fields = {}) {
+    const User = require(__dirname + '/user')(sequelize);
+
+    await this.update(Object.assign({},
+      {
+        approval_status: 'deactivated',
+        moderator_comment: null,
+      },
+      fields
+    ));
+    await this.reload();
+
+    const user = await User.findByPk(this.users_id);
+    await user.sendEmail('resource-deactivated', {
+      name: user.first_name,
+      resource: this,
+    });
+  };
+
+  Resource.prototype.cancel = async function(fields = {}) {
+    const User = require(__dirname + '/user')(sequelize);
+
+    await this.update({ ...fields, approval_status: 'awaiting_approval', moderator_comment: null });
+    await this.reload();
+
+    const user = await User.findByPk(this.users_id);
+    await user.sendEmail('resource-cancelled', {
+      name: user.first_name,
+      resource: this,
+    });
+  };
+
+  Resource.insertItem = async function(data, userId) {
+    return item = await Resource.create({
+      users_id: userId,
+      title: data.title,
+      subtitle: data.type,
+      subject_area: data.subject,
+      description: data.description,
+      keywords: data.keywords ? arrayToString(data.keywords) : '',
+      skills: data.skills ? arrayToString(data.skills) : '',
+      reading_levels: data.readingLevel,
+      standards: data.standards ? arrayToString(data.standards) : '',
+      grade: data.gradeLevel,
+      approval_status: data.approval_status
+    })
+  };
+  const arrayToString = (array) => {
+    let temp = [];
+    for(let one of array)
+      temp.push(one.value);
+    return temp.join(',');
+  }
+
+  Resource.deleteItem = async function(id) {
+    return await Resource.destroy({
+      where: {
+        id: {
+          [Op.eq]: id
+        }
+      }
+    })
+  };
+
+  Resource.insertResourceFile = async function(id, data) {
+    return await ResourceFile.create({
+      resources_id: id,
+      locator: `api/files/${data.name}`,
+      name: data.name
+    })
+  };
+
+  Resource.insertPreviewImage = async function(id, data) {
+    return await ResourcePreview.create({
+      resources_id: id,
+      locator: `api/images/test/${data.name}`,
+      order_index: data.selected
+    })
+  };
 
   class ResourcePager {
 

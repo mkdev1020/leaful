@@ -234,6 +234,9 @@ test(`accounts WITH resources should be marked dormant then purged`, async () =>
   // user should be receiving tips again!
   const tipperUser3 = await utilities.createTestUser();
   await tipperUser3.transactBalanceAdjustment({ amount: 10000 });
+
+  await new Promise(resolve => window.setTimeout(resolve, 1000));
+
   await tipperUser3.tipUserWithId(userWithResources.id, 1000);
   balance = await userWithResources.calculateBalance();
   expect(balance).toBe(750);
@@ -304,7 +307,7 @@ test(`dormancy due to too much funds`, async () => {
   await creatorUser.sendRevenueShare(999000);
   await creatorUser.reload();
   expect(creatorUser.is_dormant).toBeFalsy();
-  let balance = await creatorUser.calculateBalance();
+  let balance = await creatorUser.calculateBalance(DateTime.now().plus({ minutes: 1 }).toUTC());
   expect(balance).toEqual(999000);
 
   let mail;
@@ -315,7 +318,7 @@ test(`dormancy due to too much funds`, async () => {
   await creatorUser.sendRevenueShare(1500);
   await creatorUser.reload();
   expect(creatorUser.is_dormant).toBeTruthy();
-  balance = await creatorUser.calculateBalance();
+  balance = await creatorUser.calculateBalance(DateTime.now().plus({ minutes: 1 }).toUTC());
   expect(balance).toEqual(999900);
 
   mail = mailer.checkTestInbox();
@@ -336,7 +339,7 @@ test(`dormancy due to too much funds`, async () => {
   await tipperUser1.transactBalanceAdjustment({ amount: 10000 });
   await tipperUser1.tipUserWithId(creatorUser.id, 1000);
   await creatorUser.reload();
-  balance = await creatorUser.calculateBalance();
+  balance = await creatorUser.calculateBalance(DateTime.now().plus({ minutes: 1 }).toUTC());
   // should still be the same amount!
   expect(balance).toEqual(999900);
 
@@ -355,7 +358,7 @@ test(`dormancy due to too much funds`, async () => {
   await creatorUser.sendRevenueShare(999910);
   await creatorUser.reload();
   expect(creatorUser.is_dormant).toBeTruthy();
-  balance = await creatorUser.calculateBalance();
+  balance = await creatorUser.calculateBalance(DateTime.now().plus({ minutes: 1 }).toUTC());
   expect(balance).toEqual(999900);
 
   await models.User.update(
@@ -366,7 +369,7 @@ test(`dormancy due to too much funds`, async () => {
   await models.ScheduledJob.runAllReady();
 
   await creatorUser.reload();
-  balance = await creatorUser.calculateBalance();
+  balance = await creatorUser.calculateBalance(DateTime.now().plus({ minutes: 1 }).toUTC());
   expect(balance).toEqual(0);
 
   //

@@ -21,7 +21,7 @@ const ignore = new Set([
   'test.test.js',
 ]);
 const files = fs.readdirSync(__dirname);
-const nameRe = /(\w+)\.js/;
+const nameRe = /([a-zA-Z0-9-]+)\.js/;
 for (fname of files) {
   if (ignore.has(fname)) {
     continue;

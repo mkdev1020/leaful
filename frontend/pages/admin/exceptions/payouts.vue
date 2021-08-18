@@ -28,7 +28,7 @@
         </detail-line>
 
         <detail-line name="Date" readonly>
-          {{ selectedPayout.created_at | date('m/d/yyyy') }}
+          {{ selectedPayout.created_at | date('M/d/yyyy') }}
         </detail-line>
 
         <detail-line name="Amount" readonly>
@@ -48,16 +48,19 @@
         <detail-line name="Payees" readonly>
           {{ payouts.length }}
         </detail-line>
-        <detail-line name="Total Payout" readonly>
-          {{ totalPayout | currencyCents }}
+        <detail-line name="Total Payout" readonly color="blue">
+          <span class="pd-values">{{ totalPayout | currencyCents }}</span>
         </detail-line>
-        <detail-line name="Unpaid" readonly>
-          {{ totalEligiblePayouts | currencyCents }}
+        <detail-line name="Unpaid" readonly color="blue">
+          <span class="pd-values">{{ totalEligiblePayouts | currencyCents }}</span>
         </detail-line>
 
-        <button @click="approveAll">
-          Approve All
-        </button>
+        <div class="approve-row">
+          <button class="approve-btn" @click="approveAll">
+            Approve
+          </button>
+        </div>
+
       </div>
     </div>
   </div>
@@ -90,6 +93,32 @@
 
 .payout-details {
   width: 200px;
+}
+
+.approve-btn {
+  height: 25px;
+  width: 75px;
+  border-radius: 5px;
+  border: none;
+  background: #BEDAFF;
+  color: #ffffff;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.approve-row {
+  text-align: right;
+}
+
+.payout-amount {
+  color: #4a80ff;
+}
+
+.pd-values {
+  color: #258aff;
 }
 </style>
 

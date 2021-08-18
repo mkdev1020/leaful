@@ -67,6 +67,15 @@ module.exports = sequelize => {
       comment: null,
       field: "tier_3"
     },
+    placement: {
+      type: DataTypes.ENUM('prompt', 'sidebar'),
+      allowNull: false,
+      defaultValue: "prompt",
+      primaryKey: false,
+      autoIncrement: false,
+      comment: null,
+      field: "placement"
+    },
     started_at: {
       type: DataTypes.DATE,
       allowNull: false,

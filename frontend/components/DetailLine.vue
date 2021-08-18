@@ -123,6 +123,10 @@ export default {
       type: [String, Number, Boolean],
       default: '',
     },
+    color: {
+      type: String,
+      default: '#000000'
+    }
   },
 
   data() {

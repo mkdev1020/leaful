@@ -1,4 +1,9 @@
 
+const fs = require('fs');
+const path = require('path');
+const { v4: uuidv4 } = require('uuid');
+const mkdirp = require('mkdirp')
+
 const njwt = require('njwt');
 const bcrypt = require('bcrypt');
 const { Op } = require('sequelize');
@@ -8,13 +13,14 @@ const { DateTime } = require('luxon');
 // const jwt = require('jsonwebtoken');
 
 const { clearThrottlerForId } = require('../middleware/throttler');
+const { fstat } = require('fs');
 
 module.exports = (sequelize) => {
   const User = require(__dirname + '/definitions/users')(sequelize);
 
-  const Advertisement    = require(__dirname + '/advertisement')(sequelize);
-  const SiteSetting      = require(__dirname + '/siteSetting')(sequelize);
-  const Resource         = require(__dirname + '/resource')(sequelize);
+  const Advertisement = require(__dirname + '/advertisement')(sequelize);
+  const SiteSetting = require(__dirname + '/siteSetting')(sequelize);
+  const Resource = require(__dirname + '/resource')(sequelize);
   const ResourceDownload = require(__dirname + '/resourceDownload')(sequelize);
   const Referral         = require(__dirname + '/referral')(sequelize);
   const UserTransaction  = require(__dirname + '/userTransaction')(sequelize);
@@ -23,6 +29,7 @@ module.exports = (sequelize) => {
   const UserPermission   = require(__dirname + '/userPermission')(sequelize);
   const UserIp           = require(__dirname + '/userIp')(sequelize);
   const DonationOption   = require(__dirname + '/donationOption')(sequelize);
+  const UserDonationOption = require(__dirname + '/userDonationOption')(sequelize);
   const PurgedAccount    = require(__dirname + '/purgedAccount')(sequelize);
   const EmailTemplate    = require(__dirname + '/emailTemplate')(sequelize);
   const EmailScheduledSend = require(__dirname + '/emailScheduledSend')(sequelize);
@@ -45,22 +52,22 @@ module.exports = (sequelize) => {
   });
 
   const FRIENDLY_GRADE_NAME = {
-     p: 'Pre-K',
-     0: 'Kindergarten',
-     k: 'Kindergarten',
-     1: '1st Grade',
-     2: '2nd Grade',
-     3: '3rd Grade',
-     4: '4th Grade',
-     5: '5th Grade',
-     6: '6th Grade',
-     7: '7th Grade',
-     8: '8th Grade',
-     9: '9th Grade',
+    p: 'Pre-K',
+    0: 'Kindergarten',
+    k: 'Kindergarten',
+    1: '1st Grade',
+    2: '2nd Grade',
+    3: '3rd Grade',
+    4: '4th Grade',
+    5: '5th Grade',
+    6: '6th Grade',
+    7: '7th Grade',
+    8: '8th Grade',
+    9: '9th Grade',
     10: '10th Grade',
     11: '11th Grade',
     12: '12th Grade',
-     h: 'Higher Level',
+    h: 'Higher Level',
   };
 
   // TODO: use actual Teachagogo/admin account here
@@ -70,7 +77,7 @@ module.exports = (sequelize) => {
 
   User.ADMIN_ACCOUNT_ID = ADMIN_ACCOUNT_ID;
 
-  User.findAllForInactivity = async function(options) {
+  User.findAllForInactivity = async function (options) {
     let isCreatorClause = '1';
     if (options.isCreator === true) {
       isCreatorClause = `num_resources > 0`;
@@ -103,7 +110,7 @@ module.exports = (sequelize) => {
     );
   }
 
-  User.findAllForExcessFunds = async function(options) {
+  User.findAllForExcessFunds = async function (options) {
     const query = `
       SELECT u.*
       FROM \`users\` u
@@ -124,7 +131,7 @@ module.exports = (sequelize) => {
     );
   };
 
-  User.getAccessTokenFromLoginToken = async function(loginToken) {
+  User.getAccessTokenFromLoginToken = async function (loginToken) {
     const token = await UserLoginToken.findByToken(loginToken);
     if (!token) {
       throw new Error(`Invalid login token`);
@@ -140,7 +147,7 @@ module.exports = (sequelize) => {
     return accessToken;
   };
 
-  User.calculateTotalEligiblePayouts = async function() {
+  User.calculateTotalEligiblePayouts = async function () {
     const users = await User.findAll({ where: {} });
 
     const totals = await Promise.all(users.map(user => {
@@ -157,11 +164,11 @@ module.exports = (sequelize) => {
     return total;
   };
 
-  User.findAllByIds = async function(userIds) {
+  User.findAllByIds = async function (userIds) {
     return await User.findAll({ where: { id: { [Op.in]: Array.from(userIds) } } });
   };
 
-  User.prototype.getNewAccessToken = function(claimOverrides = {}) {
+  User.prototype.getNewAccessToken = function (claimOverrides = {}) {
     // TODO: shouldn't be hard-coded
     const signingKey = '12341234';
     const baseClaims = {
@@ -185,7 +192,7 @@ module.exports = (sequelize) => {
     return jwt.compact();
   };
 
-  User.prototype.getRefreshToken = function(claimOverrides = {}) {
+  User.prototype.getRefreshToken = function (claimOverrides = {}) {
     // TODO: shouldn't be hard-coded
     const signingKey = '12341234';
     const baseClaims = {
@@ -209,12 +216,12 @@ module.exports = (sequelize) => {
     return jwt.compact();
   };
 
-  User.prototype.doesPasswordMatch = function(password) {
+  User.prototype.doesPasswordMatch = function (password) {
     const doesMatch = bcrypt.compareSync(password, this.password_hash);
     return doesMatch;
   };
 
-  User.prototype.isIpRecognized = async function(ip) {
+  User.prototype.isIpRecognized = async function (ip) {
     const result = await UserIp.findOne({
       where: {
         users_id: this.id,
@@ -225,7 +232,7 @@ module.exports = (sequelize) => {
     return !!result;
   };
 
-  User.prototype.markIpRecognized = async function(ip) {
+  User.prototype.markIpRecognized = async function (ip) {
     const isAlreadyRecognized = await this.isIpRecognized(ip);
     if (isAlreadyRecognized) {
       return;
@@ -237,7 +244,7 @@ module.exports = (sequelize) => {
     });
   };
 
-  User.prototype.calculatePayoutDeductions = async function(date = DateTime.now().toUTC()) {
+  User.prototype.calculatePayoutDeductions = async function (date = DateTime.now().toUTC()) {
     // NOTE: The `calculateNetTopupBalance` is the heart of the "take
     // expenses from tip balance first" functionality. When calculating the
     // eligible payout, we don't want to deduct ALL the topups from the
@@ -252,7 +259,7 @@ module.exports = (sequelize) => {
     return totalTopups + totalImmatureRevenue;
   };
 
-  User.prototype.calculateImmatureRevenue = async function(date = DateTime.now().toUTC()) {
+  User.prototype.calculateImmatureRevenue = async function (date = DateTime.now().toUTC()) {
     const dateSql = date.toSQL();
     let totalImmatureRevenue = await sequelize.query(
       `
@@ -325,7 +332,7 @@ module.exports = (sequelize) => {
     return Math.max(netTopups, 0);
   };
 
-  User.prototype.calculateEligiblePayout = async function(date = DateTime.now().toUTC()) {
+  User.prototype.calculateEligiblePayout = async function (date = DateTime.now().toUTC()) {
     const balance = await this.calculateBalance(date);
     const deductions = await this.calculatePayoutDeductions(date);
 
@@ -488,7 +495,7 @@ module.exports = (sequelize) => {
     return url;
   };
 
-  User.prototype.sendLoginLink = async function() {
+  User.prototype.sendLoginLink = async function () {
     const url = await this.createLoginUrl();
     await this.sendEmail('login-link', {
       name: this.first_name,
@@ -496,7 +503,7 @@ module.exports = (sequelize) => {
     });
   };
 
-  User.prototype.clearLoginLockout = function() {
+  User.prototype.clearLoginLockout = function () {
     clearThrottlerForId(this.id);
   };
 
@@ -514,7 +521,7 @@ module.exports = (sequelize) => {
     return weights;
   }
 
-  User.prototype.getResourcePreferenceWeights = async function() {
+  User.prototype.getResourcePreferenceWeights = async function () {
     const resourcesDownloaded = await ResourceDownload.findAll({
       where: {
         users_id: this.id,
@@ -522,7 +529,7 @@ module.exports = (sequelize) => {
       include: Resource,
     });
 
-    const gradeWeights   = getWeights(resourcesDownloaded, res => res.resources_model.grade);
+    const gradeWeights = getWeights(resourcesDownloaded, res => res.resources_model.grade);
     const subjectWeights = getWeights(resourcesDownloaded, res => res.resources_model.subject_area);
 
     return {
@@ -531,11 +538,11 @@ module.exports = (sequelize) => {
     };
   };
 
-  User.prototype.getSubjectPreferenceWeights = async function(resourceDownloads) {
+  User.prototype.getSubjectPreferenceWeights = async function (resourceDownloads) {
     return
   };
 
-  User.prototype.markDownload = async function(resource, referralCode = null) {
+  User.prototype.markDownload = async function (resource, referralCode = null) {
     if (resource.users_id == this.id) {
       return null;
     }
@@ -560,7 +567,7 @@ module.exports = (sequelize) => {
     });
   };
 
-  User.prototype.setDormant = async function(reason) {
+  User.prototype.setDormant = async function (reason) {
     if (this.is_zombie || this.is_dormant) {
       return false;
     }
@@ -572,7 +579,7 @@ module.exports = (sequelize) => {
     });
   }
 
-  User.prototype.clearDormancy = async function() {
+  User.prototype.clearDormancy = async function () {
     await this.update({
       is_dormant: false,
       dormancy_reason: null,
@@ -580,7 +587,7 @@ module.exports = (sequelize) => {
     });
   }
 
-  User.prototype.getApplicableDonationPrompt = async function() {
+  User.prototype.getApplicableDonationPrompt = async function(placement) {
     if (await this.isRecentDonator()) {
       console.log('recent donor!');
       return null;
@@ -591,17 +598,17 @@ module.exports = (sequelize) => {
       return null;
     }
 
-    return await DonationOption.getPromptForUser(this);
+    return await DonationOption.getPromptForUser(this, placement);
   };
 
-  User.prototype.guardMinimumBalance = async function(amount) {
+  User.prototype.guardMinimumBalance = async function (amount) {
     const balance = await this.calculateBalance();
     if (balance < amount) {
       throw new Error(`You don't have enough funds!`);
     }
   };
 
-  User.prototype.guardMaximumBalance = async function() {
+  User.prototype.guardMaximumBalance = async function () {
     const balance = await this.calculateBalance();
     const maxBalance = 999900;
     if (balance > maxBalance) {
@@ -618,7 +625,7 @@ module.exports = (sequelize) => {
     }
   }
 
-  User.prototype.countNewResourcesFromFollowing = async function(weeks) {
+  User.prototype.countNewResourcesFromFollowing = async function (weeks) {
     const result = await sequelize.query(
       `
         SELECT IFNULL(COUNT(*), 0) AS 'num_resources'
@@ -645,7 +652,7 @@ module.exports = (sequelize) => {
     return result['num_resources'];
   };
 
-  User.prototype.getUsersFollowing = async function() {
+  User.prototype.getUsersFollowing = async function () {
     return await sequelize.query(
       `
         SELECT u.*
@@ -664,14 +671,14 @@ module.exports = (sequelize) => {
     );
   };
 
-  User.prototype.followUser = async function(userId) {
+  User.prototype.followUser = async function (userId) {
     return await UserFollowing.create({
       users_id: this.id,
       users_id_following: userId,
     });
   };
 
-  User.prototype.sendEmail = async function(template, values = {}) {
+  User.prototype.sendEmail = async function (template, values = {}) {
     const email = EmailTemplate.newEmail();
     email.setEmailAddress(this.email);
     await email.setTemplate(template);
@@ -679,7 +686,7 @@ module.exports = (sequelize) => {
     return await email.send();
   };
 
-  User.prototype.getRandomDaytimeDateTime = async function() {
+  User.prototype.getRandomDaytimeDateTime = async function () {
     const emailStartHours = await SiteSetting.getValueByName('email-start-hours', 8);
     const emailWindowHours = await SiteSetting.getValueByName('email-window-hours', 12);
 
@@ -702,7 +709,7 @@ module.exports = (sequelize) => {
     return randomDateTime;
   };
 
-  User.prototype.scheduleSendEmail = async function(template, values = {}, sendDate = null) {
+  User.prototype.scheduleSendEmail = async function (template, values = {}, sendDate = null) {
     if (sendDate === null) {
       sendDate = await this.getRandomDaytimeDateTime();
     }
@@ -720,7 +727,7 @@ module.exports = (sequelize) => {
     });
   }
 
-  User.prototype.sendRelevantNewResourcesEmail = async function(weeks = 1) {
+  User.prototype.sendRelevantNewResourcesEmail = async function (weeks = 1) {
     const newResourceCount = await this.countNewResourcesFromFollowing(weeks);
     if (newResourceCount > 0) {
       return await this.scheduleSendEmail('new-resources-following', {
@@ -733,7 +740,7 @@ module.exports = (sequelize) => {
     await this.sendNewResourcesEmailForInterests();
   };
 
-  User.prototype.sendNewResourcesEmailForInterests = async function() {
+  User.prototype.sendNewResourcesEmailForInterests = async function () {
     const downloadDetails = await this.getRecentDownloadsDetails();
     if (downloadDetails.length === 0) {
       return null;
@@ -752,7 +759,7 @@ module.exports = (sequelize) => {
     });
   };
 
-  User.prototype.getRecentDownloadsDetails = async function() {
+  User.prototype.getRecentDownloadsDetails = async function () {
     const results = await sequelize.query(
       `
         SELECT r.id, r.grade, r.subject_area, d.download_date
@@ -783,9 +790,9 @@ module.exports = (sequelize) => {
     }
 
     numResultsArrays.sort((a, b) => {
-        if (a[1] < b[1]) { return 1; }
-        if (a[1] > b[1]) { return -1; }
-        return 0;
+      if (a[1] < b[1]) { return 1; }
+      if (a[1] > b[1]) { return -1; }
+      return 0;
     });
 
     const topNumResultsArrays = numResultsArrays.slice(0, Math.min(numResultsArrays.length, 3));
@@ -796,15 +803,15 @@ module.exports = (sequelize) => {
     return details;
   };
 
-  User.prototype.guardMinimumDonation = async function(amount) {
-    const donationTier = await DonationOption.procureTierForUser(this);
+  User.prototype.guardMinimumDonation = async function(amount, placement) {
+    const donationTier = await DonationOption.procureTierForUser(this, placement);
     const minimumAmount = donationTier[0];
     if (amount < minimumAmount) {
       throw new Error(`Your donation is below the minimum amount!`);
     }
   };
 
-  User.prototype.isRecentDonator = async function() {
+  User.prototype.isRecentDonator = async function () {
     if (!this.donation_date) {
       return false;
     }
@@ -815,7 +822,7 @@ module.exports = (sequelize) => {
     return lastDonationAgeDays < 365;
   };
 
-  User.prototype.hasTippedUserRecently = async function(recipientId) {
+  User.prototype.hasTippedUserRecently = async function (recipientId) {
     const result = await UserTransaction.findOne({
       where: {
         users_id: this.id,
@@ -830,7 +837,7 @@ module.exports = (sequelize) => {
     return result !== null;
   };
 
-  User.prototype.numResourceDownloadsToday = async function() {
+  User.prototype.numResourceDownloadsToday = async function () {
     let totalToday = await sequelize.query(
       `
       SELECT COUNT(*) AS 'total'
@@ -850,7 +857,7 @@ module.exports = (sequelize) => {
     return totalToday;
   };
 
-  User.prototype.numTopupsDoneToday = async function() {
+  User.prototype.numTopupsDoneToday = async function () {
     let totalTopupsToday = await sequelize.query(
       `
       SELECT COUNT(*) AS 'total'
@@ -894,7 +901,7 @@ module.exports = (sequelize) => {
     return totalTipsToday;
   };
 
-  User.prototype.totalAmountTippedToday = async function() {
+  User.prototype.totalAmountTippedToday = async function () {
     let totalAmount = await sequelize.query(
       `
       SELECT IFNULL(SUM(\`amount\`), 0) AS 'total'
@@ -948,7 +955,7 @@ module.exports = (sequelize) => {
     return tipTransactions;
   }
 
-  User.prototype.applyTopup = async function(amount) {
+  User.prototype.applyTopup = async function (amount) {
     const topupsToday = await this.numTopupsDoneToday();
     if (topupsToday >= 2) {
       throw new Error(`You have exceeded the maximum number of allowed topups in a single day!`);
@@ -957,7 +964,7 @@ module.exports = (sequelize) => {
     await this.transactTopup(amount);
   };
 
-  User.prototype.sendRevenueShare = async function(amount) {
+  User.prototype.sendRevenueShare = async function (amount) {
     if (parseInt(this.is_dormant)) {
       return await this.transactBalanceAdjustment({
         amount: -amount,
@@ -976,23 +983,23 @@ module.exports = (sequelize) => {
     await this.guardMaximumBalance();
   }
 
-  User.prototype.payoutToPaypal = async function(amount) {
+  User.prototype.payoutToPaypal = async function (amount) {
     // TODO TODO TODO
 
     return true;
   };
 
-  User.prototype.getPendingPayout = async function() {
+  User.prototype.getPendingPayout = async function () {
     return await UserTransaction.findOne({
       where: {
         users_id: this.id,
-        type  : 'payout',
+        type: 'payout',
         status: 'awaiting_approval',
       },
     });
   };
 
-  User.prototype.requestPayout = async function() {
+  User.prototype.requestPayout = async function () {
     const alreadyPendingPayout = await this.getPendingPayout();
 
     if (alreadyPendingPayout) {
@@ -1015,7 +1022,7 @@ module.exports = (sequelize) => {
     });
   };
 
-  User.prototype.approvePayout = async function() {
+  User.prototype.approvePayout = async function () {
     const pendingPayout = await this.getPendingPayout();
     if (!pendingPayout) {
       throw new Error(`There are no pending payouts to approve!`);
@@ -1035,7 +1042,7 @@ module.exports = (sequelize) => {
     );
   };
 
-  User.prototype.rejectPayout = async function() {
+  User.prototype.rejectPayout = async function () {
     const pendingPayout = await this.getPendingPayout();
     if (!pendingPayout) {
       throw new Error(`There are no pending payouts to approve!`);
@@ -1053,19 +1060,24 @@ module.exports = (sequelize) => {
     );
   };
 
-  User.prototype.donate = async function(amount) {
-    await this.guardMinimumDonation(amount);
+  User.prototype.donate = async function(amount, placement) {
+    await this.guardMinimumDonation(amount, placement);
     await this.transactDonation({ amount });
+
+    const donationStats = await UserDonationOption.findForUser(this, placement);
     await User.update(
-      { donation_date: DateTime.now().toUTC().toISO() },
+      {
+        donation_date: DateTime.now().toUTC().toISO(),
+        donated_options_id: donationStats.donations_options_id,
+      },
       { where: { id: this.id } }
     );
   };
 
-  User.prototype.transactDonation = async function(donation) {
+  User.prototype.transactDonation = async function (donation) {
     const transaction = Object.assign({}, donation, {
-      status      : 'completed',
-      fingerprint : UserTransaction.makeFingerprint(),
+      status: 'completed',
+      fingerprint: UserTransaction.makeFingerprint(),
     });
 
     const transactions = await UserTransaction.bulkCreate([
@@ -1086,10 +1098,10 @@ module.exports = (sequelize) => {
     return transactions;
   };
 
-  User.prototype.transactTip = async function(recipientUser, tip) {
+  User.prototype.transactTip = async function (recipientUser, tip) {
     const transaction = Object.assign({}, tip, {
-      status      : 'completed',
-      fingerprint : UserTransaction.makeFingerprint(),
+      status: 'completed',
+      fingerprint: UserTransaction.makeFingerprint(),
     });
 
     let recipientId = recipientUser.id;
@@ -1125,11 +1137,11 @@ module.exports = (sequelize) => {
     return transactions;
   };
 
-  User.prototype.transactBalanceAdjustment = async function(adjustment) {
+  User.prototype.transactBalanceAdjustment = async function (adjustment) {
     const transaction = Object.assign({}, adjustment, {
-      type        : 'adjustment',
-      status      : 'completed',
-      fingerprint : UserTransaction.makeFingerprint(),
+      type: 'adjustment',
+      status: 'completed',
+      fingerprint: UserTransaction.makeFingerprint(),
     });
 
     return await UserTransaction.bulkCreate([
@@ -1146,7 +1158,7 @@ module.exports = (sequelize) => {
     ]);
   };
 
-  User.prototype.transactTopup = async function(amount) {
+  User.prototype.transactTopup = async function (amount) {
     return await UserTransaction.create({
       users_id: this.id,
       amount,
@@ -1155,7 +1167,7 @@ module.exports = (sequelize) => {
     });
   };
 
-  User.prototype.deleteZombie = async function() {
+  User.prototype.deleteZombie = async function () {
     if (!this.is_zombie) {
       throw new Error(`This user is not a zombie!`);
     }
@@ -1168,12 +1180,12 @@ module.exports = (sequelize) => {
     return await this.destroy();
   };
 
-  User.prototype.forfeitAllFunds = async function() {
+  User.prototype.forfeitAllFunds = async function () {
     const balance = await this.calculateBalance();
     await this.transactBalanceAdjustment({ amount: -balance });
   };
 
-  User.prototype.forfeitAllResources = async function() {
+  User.prototype.forfeitAllResources = async function () {
     return await sequelize.query(
       `
       UPDATE \`resources\` r
@@ -1189,7 +1201,7 @@ module.exports = (sequelize) => {
     );
   };
 
-  User.prototype.purge = async function() {
+  User.prototype.purge = async function () {
     await this.forfeitAllFunds();
     await this.forfeitAllResources();
     await PurgedAccount.create({
@@ -1198,7 +1210,7 @@ module.exports = (sequelize) => {
     await this.destroy();
   };
 
-  User.prototype.getNumFollowers = async function() {
+  User.prototype.getNumFollowers = async function () {
     const result = await sequelize.query(
       `
         SELECT IFNULL(COUNT(*), 0) AS 'count'
@@ -1216,7 +1228,7 @@ module.exports = (sequelize) => {
     return result.count;
   };
 
-  User.prototype.getNumFollowing = async function() {
+  User.prototype.getNumFollowing = async function () {
     const result = await sequelize.query(
       `
         SELECT IFNULL(COUNT(*), 0) AS 'count'
@@ -1234,7 +1246,7 @@ module.exports = (sequelize) => {
     return result.count;
   };
 
-  User.prototype.getNumResources = async function() {
+  User.prototype.getNumResources = async function () {
     const result = await sequelize.query(
       `
         SELECT IFNULL(COUNT(*), 0) AS 'count'
@@ -1252,7 +1264,7 @@ module.exports = (sequelize) => {
     return result.count;
   };
 
-  User.prototype.getNumDownloads = async function() {
+  User.prototype.getNumDownloads = async function () {
     const result = await sequelize.query(
       `
         SELECT IFNULL(COUNT(*), 0) AS 'count'
@@ -1271,7 +1283,7 @@ module.exports = (sequelize) => {
     return result.count;
   };
 
-  User.prototype.getAdsRunning = async function() {
+  User.prototype.getAdsRunning = async function () {
     return await Advertisement.findAll({
       where: {
         users_id: this.id,
@@ -1287,7 +1299,7 @@ module.exports = (sequelize) => {
     return permissions;
   };
 
-  User.insertUser = async function(data) {
+  User.insertUser = async function (data) {
     console.log('insert user', data)
     const salt = await bcrypt.genSalt(10);
     const password = await bcrypt.hash(data.password, salt);
@@ -1302,9 +1314,44 @@ module.exports = (sequelize) => {
     })
   };
 
-  User.getUserByTokenId = async function(id) {
+  User.getUserByTokenId = async function (id) {
     return await User.findByPk(id);
   }
+  User.prototype.getAvatarRelativePath = function () {
+    const reg = /\/api\/images\/(.+)/;
+    const matches = reg.exec(this.avatar_locator);
+
+    if (!matches) {
+      return null;
+    }
+    return matches[1];
+  };
+
+  User.prototype.clearAvatarFile = async function () {
+    if (!this.avatar_locator.startsWith('/api/images/custom-avatars')) {
+      return;
+    }
+
+    const relativePath = this.getAvatarRelativePath();
+    const imagePath = path.join(__dirname, '../static/images/master', relativePath);
+
+    return fs.unlinkSync(imagePath);
+  };
+
+  User.prototype.setAvatar = async function (file) {
+    this.clearAvatarFile();
+
+    const avatarBasePath = path.join(__dirname, '../static/images/master/custom-avatars');
+    mkdirp(avatarBasePath);
+    const avatarName = uuidv4() + path.extname(file.name);
+    const avatarPath = path.join(avatarBasePath, avatarName);
+
+    fs.renameSync(file.path, avatarPath);
+
+    await this.update({
+      avatar_locator: `/api/images/custom-avatars/${avatarName}`,
+    });
+  };
 
   return User;
 }

@@ -2,14 +2,37 @@
 USE `teachagogo_dev`;
 
 INSERT INTO `donations_options`
-(`id`, `is_default`, `tier_1`, `tier_2_onset`, `tier_2`, `tier_3_onset`, `tier_3`)
+(`id`, `is_default`, `tier_1`, `placement`)
 VALUES
-(1, 1, '[24, 48, 96]', 3, '[12, 24, 48]', 5, '[6, 12, 24]');
+(1, 1, '[24, 48, 96]', 'prompt'),
+(2, 1, '[24, 48, 96]', 'sidebar')
+;
 
 INSERT INTO `site_settings`
-(`title`, `name`, `value`)
+(`name`, `value`, `title`, `description`)
 VALUES
-('Global Revenue Share', 'global_revenue_share', '0.5');
+
+('ad_inventory',         '10',               'Ad Inventory',        'Set the percentage of overall ad inventory reserved for user advertising.'),
+('ad_minimums',          '"1, 20"',          'Ad Minimums',         'Set, in whole dollars, the minimum per day, and minimum total payment, for ad spends.'),
+('array_config',         '"7, 3, 1, 1, 12"', 'Array Configuration', 'Sets the homepage resource distribution (featured, new, preferred, ads, denominator).'),
+('auto_ads',             'false',            'Auto Ads',            'When enabled, the system auto-approves all user ad copy.'),
+('auto_payouts',         'false',            'Auto Payouts',        'When enabled, the system auto-approves all payout requests.'),
+('auto_publish',         'false',            'Auto Publish',        'When enabled, the system auto-approves all publishing submissions.'),
+('css_override',         '""',               'CSS Override',        'Enter coding to supercede default CSS styling.'),
+('download_limit',       '"5, 100"',         'Download Limits',     'Sets the per day download limits for both free, and supportive, users.'),
+('feature_rate',         '5',                'Feature Rate',        'Sets the price, in whole dollars, charged to users for featuring a resource.'),
+('file_size',            '100',              'File Size',           'Sets the maximum size, in MB, that is permitted for Learningful resources.'),
+('global_revenue_share', '50',               'Revenue Share',       'Set the percentage of daily net revenue to share with contributors.'),
+('offline_mode',         'false',            'Offline Mode',        'When enabled, Learningful becomes accessible only to admin level users.'),
+('payout_delay',         '30',               'Payout Delay',        'Set the number of days to hold all user earnings from payout eligibility.'),
+('payout_fee',           '1.0',              'Payout Fee',          'Set the fee to charge USA residents for issuing a PayPal payout.'),
+('pricing',              '[]',               'Pricing',             ''),
+('purging',              '"2, 180"',         'Purging',             'Set the number of days at which to purge unverified, and verified, non-contributor accounts.'),
+('resource_file_types',  '"ai, avi, bmp, bnk, csv, doc, docx, dot, exec, eps, epub, flp, flv, flipchart, gif, htm, html, ink, jpeg, jpg, key, knt, mov, mp3, mpeg, mpg, mp4, m4a, m4v, notebook, ods, pdf, png, pps, ppsx, ppt, pptx, psd, pub, ram, rm, rtf, svg, swf, tif, tiff, txt, wav, wpd, wmv, xls, xlsx, xlt, xltx, zip"', 'File Types', 'Comma-separated. No need to include a period. Example: ai, avi, bmp'),
+('terminology',          '""',               'Terminology',         'Enter words or phrases to restrict across Learningful, comma separated.'),
+('tip_percentage',       '75',               'Tipping %',           'Set the percentage of each tip paid out to contributors.'),
+('tipping_prompt',       '5',                'Tipping Prompt',      'Set the frequency of downloads at which the tipping prompt should show.')
+;
 
 INSERT INTO `captcha_solutions`
 (`clue`, `solution`)
@@ -143,9 +166,15 @@ VALUES
 
 -- TODO: create special admin account, and special "Teachagogo" account
 INSERT INTO `users`
-(`id`, `role`, `email`, `first_name`, `last_name`, `password_hash`, `donations_options_id`, `username`, `avatar_locator`)
+(`id`, `role`, `email`, `first_name`, `last_name`, `password_hash`, `username`, `avatar_locator`)
 VALUES
-(1, 'admin', 'jmason@masoneducation.com', 'Joshua', 'Mason', 'xxxx', 1, 'Teachagogo', '/api/images/letters/J/j1.svg');
+(1, 'admin', 'jmason@masoneducation.com', 'Joshua', 'Mason', 'xxxx', 'Teachagogo', '/api/images/letters/J/j1.svg');
+
+INSERT INTO `users_donations_options`
+(`donations_options_id`, `users_id`)
+VALUES
+(1, 1)
+;
 
 DELIMITER $$
 

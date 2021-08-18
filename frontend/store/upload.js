@@ -2,23 +2,20 @@ import sdk from '../lib/learningful-sdk'
 export const state = {
   uploadModal: false,
   step : -1,
+  resourceID : '',
   precheckList : [],
   title : '',
   type : '',
   subject : '',
   description : '',
-  gradeLevel : {},
+  gradeLevel : '',
   skill : [],
   standard : [],
   readingLevel : '',
   keywords : [],
-  upladedFiles : [
-    {displayName : "111.pdf", realName : "123.pdf", size : "13MB", status : 1},
-    {displayName : "222.pdf", realName : "123.pdf", size : "13MB", status : 0}
-  ],
+  uploadedFiles : [],
   coverImages : [],
   status : 0,
-  prevStatus : 0,
   prevStep : 0
 }
 
@@ -26,10 +23,9 @@ export const getters = {
   getUploadModalStatus: state => state.uploadModal,
   getUploadStep : state => state.step,
   getUploadTitle : state => state.title,
-  getUploadedFileList : state => state.upladedFiles,
+  getUploadedFileList : state => state.uploadedFiles,
   getCoverImageList : state => state.coverImages,
   getStatus : state => state.status,
-  getPreviousStatus : state => state.preStatus,
   getPreviousStep : state => state.prevStep
 }
 
@@ -48,14 +44,14 @@ export const mutations = {
   SET_UPLOAD_STANDARD : (state, value) => { state.standard = value },
   SET_UPLOAD_READING_LEVEL : (state, value) => { state.readingLevel = value },
   SET_UPLOAD_KEYWORDS : (state, value) => { state.keywords = value },
-  ADD_UPLOAD_FILE : (state, value) => { state.upladedFiles.push(value) },
+  ADD_UPLOAD_FILE : (state, value) => { state.uploadedFiles.push(value) },
   UPDATE_UPLOADED_FILE_STATUS : (state, value) => {
-    let temp = state.upladedFiles.slice();
+    let temp = state.uploadedFiles.slice();
     let length = temp.length;
     temp[length-1] = { ...temp[length-1], ...value };
-    state.upladedFiles = temp;
+    state.uploadedFiles = temp;
   },
-  DELETE_UPLOADED_FILE : (state, value) => { state.upladedFiles.splice(value, 1) },
+  DELETE_UPLOADED_FILE : (state, value) => { state.uploadedFiles.splice(value, 1) },
   ADD_COVER_IMAGE : (state, value) => { state.coverImages.push(value) },
   UPDATE_COVER_IMAGE_STATUS : (state, value) => {
     let temp = state.coverImages.slice();
@@ -64,7 +60,7 @@ export const mutations = {
     state.coverImages = temp;
   },
   DELETE_UPLOADED_COVER_IMAGE : (state, value) => { state.coverImages.splice(value, 1) },
-  SET_PREVIEW_COVER_IMAGE : (state, value) => { 
+  SET_PREVIEW_COVER_IMAGE : (state, value) => {
     let temp = state.coverImages.slice();
     for(let one of temp)
       one.status = 1;
@@ -72,61 +68,58 @@ export const mutations = {
     state.coverImages = temp;
   },
   SET_STATUS : (state, value) => { state.status = value },
-  SET_PREVIOUS_STATUS : (state, value) => { state.prevStatus = value }
+  SET_RESOURCE_ID : (state, value) => { state.resourceID = value }
 }
 
 export const actions = {
   async uploadFile({commit, state}, file) {
-    try{
-      const formdata = new FormData();
-      formdata.append('file', file);
-      
-      let displayName = file.name;
-      commit('ADD_UPLOAD_FILE', {displayName , status : 0, filesize : file.size});
-      const res = await this.$sdk.post('/upload/fileUpload', formdata);
-      const body = await res.json();
-      let realName = body.filename;
+    try {
+      commit('ADD_UPLOAD_FILE', {
+        displayName: file.name,
+        status : 0,
+        filesize : file.size
+      });
+      let base64 = await new Promise((resolve) => {
+        let reader = new FileReader();
+        reader.onload = async (e) => {
+            resolve(reader.result);
+        };
+        reader.readAsDataURL(file);
+      });
+      commit('UPDATE_UPLOADED_FILE_STATUS', { base64, status : 1 });
 
-      commit('UPDATE_UPLOADED_FILE_STATUS', {realName, status : 1});
-
-    }catch(e){
+    } catch(e){
       console.log(e.response);
     }
   },
   async delUploadedFile({commit, state}, index) {
-    try{
-      const res = await this.$sdk.post('upload/delUploadedFile', {filename : state.upladedFiles[index].realName});
-      const body = await res.json();
+    try {
       commit('DELETE_UPLOADED_FILE', index);
-
-    }catch(e){
+    } catch(e){
       console.log(e.response);
     }
   },
-  async uploadCoverImage({commit, state}, file){
-    try{
-      let base64 = await new Promise((resolve)=>{
+  async uploadCoverImage({commit, state}, file) {
+    try {
+      let base64 = await new Promise((resolve) => {
         let reader = new FileReader();
-        reader.onload = async (e)=>{
+        reader.onload = async (e) => {
             resolve(reader.result);
         };
         reader.readAsDataURL(file);
       })
-      let displayName = file.name;
-      commit('ADD_COVER_IMAGE', {displayName, filesize : file.size, status : 0});
-      
-      const formdata = new FormData();
-      formdata.append('file', file);
-      // const res = await this.$sdk.post('/upload/fileUpload', formdata);
-      // const body = await res.json();
-      // let realName = body.filename;
+      commit('ADD_COVER_IMAGE', {
+        displayName: file.name,
+        filesize : file.size,
+        status : 1,
+        base64
+      });
 
-      commit('UPDATE_COVER_IMAGE_STATUS', { /*realName,*/ status : 1, source : base64});
-    }catch(e){
+    } catch(e) {
       console.log(e.response);
     }
   },
-  async delUploadedCoverImage({commit, state}, index){
+  async delUploadedCoverImage({commit, state}, index) {
     try{
       // const res = await this.$sdk.post('upload/delUploadedCoverImage', {filename : state.coverImages[index].realName});
       // const body = await res.json();
@@ -136,23 +129,87 @@ export const actions = {
       console.log(e.response);
     }
   },
-  async submitResource({commit, state}) {
+  async submitResource({commit, state}, userId) {
     try {
-      let data = {...state};
-      delete data.uploadModal;
-      delete data.step;
+      let data = {
+        users_id : userId,
+        // precheckList : state.precheckList,
+        title : state.title,
+        type : state.type,
+        subject : state.subject,
+        description : state.description,
+        gradeLevel : state.gradeLevel.text,
+        skills : state.skill,
+        standards : state.standard,
+        readingLevel : state.readingLevel,
+        keywords : state.keywords,
+        approval_status : "awaiting_approval"
+      }
 
-      const res = await this.$sdk.post('/upload/submitResource', data);
+      const res = await this.$sdk.post('/resources', data);
       const body = await res.json();
-      console.log(body)
 
+      let resource_id = body.item.id;
+      for(let i=0; i < state.uploadedFiles.length; i++){
+        let file = state.uploadedFiles[i];
+        this.$sdk.post(`/resources/${resource_id}/files`, {
+          file : file.base64,
+          name : file.displayName
+        });
+      }
+      for (let i=0; i < state.coverImages.length; i++) {
+        let file = state.coverImages[i];
+        this.$sdk.post(`/resources/${resource_id}/resources-preview`, {
+          file : file.base64,
+          name : file.displayName,
+          selected : file.status - 1
+        });
+      }
+      commit('SET_RESOURCE_ID', resource_id);
       commit('SET_STATUS', 1);
-    } catch (e) {
-      console.log(e.response)
+    }catch(err) {
+      console.log(err.response)
     }
   },
-  async deleteResource({commit, state}){
-    
+  async deleteResource({commit, state}) {
+    try {
+      const res = await this.$sdk.delete(`/resources/${state.resourceID}`);
+      const body = await res.json();
+
+      commit('SET_UPLOAD_STEP', 14);
+    } catch(e) {
+      console.log(e.response);
+    }
+  },
+  async cancelSubmitResource({commit, state}) {
+    try{
+      const res = await this.$sdk.post(`/resources/${state.resourceID}/cancel`, {});
+      const body = await res.json();
+
+      commit('SET_STATUS', 0);
+    } catch(e) {
+      console.log(e.response);
+    }
+  },
+  async deactivateResource({commit, state}) {
+    try{
+      const res = await this.$sdk.post(`/resources/${state.resourceID}/deactivate`, {});
+      const body = await res.json();
+
+      commit('SET_STATUS', 5);
+    } catch(e) {
+      console.log(e.response);
+    }
+  },
+  async reactivateResource({commit, state}) {
+    try{
+      const res = await this.$sdk.post(`/resources/${state.resourceID}/reactivate`, {});
+      const body = await res.json();
+
+      commit('SET_STATUS', 2);
+    } catch(e) {
+      console.log(e.response);
+    }
   }
 
 }

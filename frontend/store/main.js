@@ -16,12 +16,13 @@ export const state = () => ({
   isAuthPromptShowing: false,
   postAuthRedirect: null,
   postAuthReload: false,
-  user: {},
+  user: '',
   requestLimit: Object.assign({}, requestLimitDefault),
 });
 
-export const getters = () => ({
-});
+export const getters = {
+  getUser : state => state.user
+};
 
 export const mutations = {
 
@@ -30,7 +31,9 @@ export const mutations = {
       state[key] = val;
     }
   },
-
+  setUser(state, value) {
+    state.user = value;
+  },
   loadFromLocalStorage(state) {
     const jsonDataString = window.localStorage.getItem('store/main');
     if (!jsonDataString) {
@@ -38,7 +41,8 @@ export const mutations = {
     }
     const jsonData = JSON.parse(jsonDataString);
     state.accessToken = jsonData.accessToken;
-    state.isAdmin = jsonData.isAdmin
+    state.isAdmin = jsonData.isAdmin;
+    state.user = jsonData.user;
   },
 
   saveToLocalStorage(state) {

@@ -5,23 +5,43 @@
       v-if="supportThreads.length"
       style="width: 100%; display: flex;"
     >
-      <help-message-thread
-        v-if="selectedSupportThread"
-        :supportMessages="selectedSupportThread.teacherMessages"
-        :threadIndex="supportThreadIndex"
-        :threadIndexMax="supportThreads.length"
-        @skip="skipSupportThread"
-      />
+      <template v-if="!responseBoxFullMode">
+        <help-message-thread
+          v-if="selectedSupportThread"
+          :supportMessages="selectedSupportThread.teacherMessages"
+          :threadIndex="supportThreadIndex"
+          :threadIndexMax="supportThreads.length"
+          @skip="skipSupportThread"
+          @responseBoxFullMode="responseBoxFullMode = true"
+          @responseBoxMinimizeMode="responseBoxFullMode = false"
+        />
 
-      <div class="stats-strip__divider" />
+        <div class="stats-strip__divider" />
 
-      <help-message-thread
-        v-if="selectedSupportThread"
-        :supportMessages="selectedSupportThread.adminMessages"
-        :isAdmin="true"
-        @submitResponse="submitSupportResponse"
-        @resolve="markSupportThreadResolved"
-      />
+        <help-message-thread
+          v-if="selectedSupportThread"
+          :supportMessages="selectedSupportThread.adminMessages"
+          :isAdmin="true"
+          @submitResponse="submitSupportResponse"
+          @resolve="markSupportThreadResolved"
+          @responseBoxFullMode="responseBoxFullMode = true"
+          @responseBoxMinimizeMode="responseBoxFullMode = false"
+        />
+      </template>
+
+      <template v-else>
+        <help-message-thread
+          v-if="selectedSupportThread"
+          :supportMessages="selectedSupportThread.adminMessages"
+          :isAdmin="true"
+          @submitResponse="submitSupportResponse"
+          @resolve="markSupportThreadResolved"
+          @responseBoxFullMode="responseBoxFullMode = true"
+          @responseBoxMinimizeMode="responseBoxFullMode = false"
+          :fullMode="responseBoxFullMode"
+        />
+      </template>
+
     </div>
     <div v-else>
       You're all caught up on Support threads!
@@ -37,6 +57,12 @@ import HelpMessageThread from '../../../components/exceptions/HelpMessageThread'
 export default {
   components: {
     HelpMessageThread,
+  },
+
+  data() {
+    return {
+      responseBoxFullMode: false
+    }
   },
 
   computed: {
@@ -104,3 +130,7 @@ export default {
 
 };
 </script>
+
+<style>
+
+</style>

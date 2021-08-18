@@ -89,4 +89,8 @@
   --col-title-inactive-color : #F99A00;
   --col-title-active-color : #00E68E;
   --col-title-delete-color : #10D2FF;
+
+  --col-profile-item-color : #E9EFF4;
+  --status-arrow-btn : #191919;
+  --status-arrow-btn-hover : #ef1000;
 }

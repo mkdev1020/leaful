@@ -85,7 +85,7 @@ test(`test home page composition`, async () => {
     users_id: creatorUser.id,
     spend_per_day: 1,
     start_date: DateTime.now().toUTC().toISO(),
-    end_date  : DateTime.now().toUTC().toISO(),
+    end_date  : DateTime.now().plus({ days: 1 }).toUTC().toISO(),
     running_status: 'running',
   });
 
@@ -170,7 +170,7 @@ test(`ads should be turned off for donators`, async () => {
     users_id: creatorUser.id,
     spend_per_day: 1,
     start_date: DateTime.now().toUTC().toISO(),
-    end_date  : DateTime.now().toUTC().toISO(),
+    end_date  : DateTime.now().plus({ days: 1 }).toUTC().toISO(),
     running_status: 'running',
   });
 

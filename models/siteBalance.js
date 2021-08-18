@@ -99,7 +99,7 @@ module.exports = (sequelize) => {
   };
 
   SiteBalance.calculateRevenueShare = async function(date) {
-    const globalRevenueShare = await SiteSetting.getValueByName('global_revenue_share');
+    const globalRevenueShare = await SiteSetting.getGlobalRevenueShare();
 
     const netRevenue = await SiteBalance.calculateNetRevenue(date);
     const revenueShare = netRevenue * globalRevenueShare;
